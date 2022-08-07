@@ -12,7 +12,7 @@ yacs
 gdown
 flake8
 yapf
-isort==4.3.21
+isort
 imageio
 chardet
 # Export --------------------------------------
