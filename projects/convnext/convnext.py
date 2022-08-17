@@ -20,14 +20,30 @@ class Block(nn.Module):
 
     Args:
         dim (int): Number of input channels.
+        kernel_size (int): Sizes of the convolutional kernels of the convnext block. Default: 7
+        kernel_stride (int): Strides of the convolutional kernels of the convnext block. Default: 0
+        kernel_padding (int): Padding of the convolutional kernels of the convnext block. Default: 3
         drop_path (float): Stochastic depth rate. Default: 0.0
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
     """
 
-    def __init__(self, dim: int, drop_path=0.0, layer_scale_init_value=1e-6):
+    def __init__(
+        self,
+        dim: int,
+        kernel_size=7,
+        kernel_stride=0,
+        kernel_padding=3,
+        drop_path=0.0,
+        layer_scale_init_value=1e-6,
+    ):
         super().__init__()
         self.dwconv = nn.Conv2d(
-            dim, dim, kernel_size=7, padding=3, groups=dim
+            dim,
+            dim,
+            kernel_size=kernel_size,
+            stride=kernel_stride,
+            padding=kernel_padding,
+            groups=dim,
         )  # depthwise conv
         self.norm = LayerNorm(dim, eps=1e-6)
         self.pwconv1 = nn.Linear(
@@ -68,6 +84,9 @@ class ConvNeXt(nn.Module):
         num_classes (int): Number of classes for classification head. Default: 1000
         depths (tuple(int)): Number of blocks at each stage. Default: [3, 3, 9, 3]
         dims (int): Feature dimension at each stage. Default: [96, 192, 384, 768]
+        kernel_sizes (int): Sizes of the convolutional kernels of the two downsample blocks (1st and 2nd element) and the convnext blocks (3th element). Default: [4, 2, 7]
+        kernel_strides (int): Strides of the convolutional kernels of the two downsample blocks (1st and 2nd element) and the convnext blocks (3th element). Default: [4, 2, 1]
+        kernel_paddings (int): Paddings of the convolutional kernels of the two downsample blocks (1st and 2nd element) and the convnext blocks (3th element). Default: [0,0,3]
         drop_path_rate (float): Stochastic depth rate. Default: 0.
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
         head_init_scale (float): Init scaling value for classifier weights and biases. Default: 1.
@@ -79,6 +98,9 @@ class ConvNeXt(nn.Module):
         num_classes=1000,
         depths: List[int] = [3, 3, 9, 3],
         dims: List[int] = [96, 192, 384, 768],
+        kernel_sizes: List[int] = [4, 2, 7],
+        kernel_strides: List[int] = [4, 2, 1],
+        kernel_paddings: List[int] = [0, 0, 3],
         drop_path_rate=0.0,
         layer_scale_init_value=1e-6,
         head_init_scale=1.0,
@@ -89,14 +111,25 @@ class ConvNeXt(nn.Module):
             nn.ModuleList()
         )  # stem and 3 intermediate downsampling conv layers
         stem = nn.Sequential(
-            nn.Conv2d(in_chans, dims[0], kernel_size=4, stride=4),
+            nn.Conv2d(
+                in_chans,
+                dims[0],
+                kernel_size=kernel_sizes[0],
+                stride=kernel_strides[0],
+                padding=kernel_paddings[0],
+            ),
             LayerNorm(dims[0], eps=1e-6, data_format="channels_first"),
         )
         self.downsample_layers.append(stem)
         for i in range(3):
             downsample_layer = nn.Sequential(
                 LayerNorm(dims[i], eps=1e-6, data_format="channels_first"),
-                nn.Conv2d(dims[i], dims[i + 1], kernel_size=2, stride=2),
+                nn.Conv2d(
+                    dims[i],
+                    dims[i + 1],
+                    kernel_size=kernel_sizes[1],
+                    stride=kernel_strides[1],
+                ),
             )
             self.downsample_layers.append(downsample_layer)
 
@@ -110,6 +143,9 @@ class ConvNeXt(nn.Module):
                 *[
                     Block(
                         dim=dims[i],
+                        kernel_size=kernel_sizes[2],
+                        kernel_stride=kernel_strides[2],
+                        kernel_padding=kernel_paddings[2],
                         drop_path=dp_rates[cur + j],
                         layer_scale_init_value=layer_scale_init_value,
                     )
