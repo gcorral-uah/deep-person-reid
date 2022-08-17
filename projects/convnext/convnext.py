@@ -8,7 +8,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from typing import List, Sequence, Tuple, Union
 from .drop import DropPath
 
 
@@ -24,7 +24,7 @@ class Block(nn.Module):
         layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
     """
 
-    def __init__(self, dim, drop_path=0.0, layer_scale_init_value=1e-6):
+    def __init__(self, dim: int, drop_path=0.0, layer_scale_init_value=1e-6):
         super().__init__()
         self.dwconv = nn.Conv2d(
             dim, dim, kernel_size=7, padding=3, groups=dim
@@ -42,7 +42,7 @@ class Block(nn.Module):
         )
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         input = x
         x = self.dwconv(x)
         x = x.permute(0, 2, 3, 1)  # (N, C, H, W) -> (N, H, W, C)
@@ -77,8 +77,8 @@ class ConvNeXt(nn.Module):
         self,
         in_chans=3,
         num_classes=1000,
-        depths=[3, 3, 9, 3],
-        dims=[96, 192, 384, 768],
+        depths: List[int] = [3, 3, 9, 3],
+        dims: List[int] = [96, 192, 384, 768],
         drop_path_rate=0.0,
         layer_scale_init_value=1e-6,
         head_init_scale=1.0,
@@ -126,12 +126,14 @@ class ConvNeXt(nn.Module):
         self.head.weight.data.mul_(head_init_scale)
         self.head.bias.data.mul_(head_init_scale)
 
-    def _init_weights(self, m):
+    def _init_weights(self, m: torch.nn.Module):
         if isinstance(m, (nn.Conv2d, nn.Linear)):
             nn.init.trunc_normal_(m.weight, std=0.02)
-            nn.init.constant_(m.bias, 0)
+            if m.bias is not None:
+                # This if is needed becase the bias term is nn.Module is defined as Optional[Tensor], but we can't initialize a None value
+                nn.init.constant_(m.bias, 0)
 
-    def forward_features(self, x):
+    def forward_features(self, x: torch.Tensor):
         for i in range(4):
             x = self.downsample_layers[i](x)
             x = self.stages[i](x)
@@ -139,7 +141,7 @@ class ConvNeXt(nn.Module):
             x.mean([-2, -1])
         )  # global average pooling, (N, C, H, W) -> (N, C)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x = self.forward_features(x)
         x = self.head(x)
         return x
@@ -152,7 +154,12 @@ class LayerNorm(nn.Module):
     with shape (batch_size, channels, height, width).
     """
 
-    def __init__(self, normalized_shape, eps=1e-6, data_format="channels_last"):
+    def __init__(
+        self,
+        normalized_shape: Union[int, List[int]],
+        eps=1e-6,
+        data_format="channels_last",
+    ):
         super().__init__()
         self.weight = nn.Parameter(torch.ones(normalized_shape))
         self.bias = nn.Parameter(torch.zeros(normalized_shape))
@@ -162,11 +169,9 @@ class LayerNorm(nn.Module):
             raise NotImplementedError
         self.normalized_shape = (normalized_shape,)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         if self.data_format == "channels_last":
-            return F.layer_norm(
-                x, self.normalized_shape, self.weight, self.bias, self.eps
-            )
+            return F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)  # type: ignore
         elif self.data_format == "channels_first":
             u = x.mean(1, keepdim=True)
             s = (x - u).pow(2).mean(1, keepdim=True)
