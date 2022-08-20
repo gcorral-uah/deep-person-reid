@@ -218,7 +218,7 @@ class LayerNorm(nn.Module):
 
 class ChannelGate(nn.Module):
     r"""A mini-network that generates channel-wise gates conditioned on input tensor.
-        It allows the mix of the result of multiple networks depending on the input image.
+    It allows the mix of the result of multiple networks depending on the input image.
     """
 
     def __init__(
