@@ -143,8 +143,10 @@ class ChannelGate(nn.Module):
         layer_norm=False,
     ):
         super(ChannelGate, self).__init__()
+
         if num_gates is None:
             num_gates = in_channels
+
         self.return_gates = return_gates
         self.global_avgpool = nn.AdaptiveAvgPool2d(1)
         self.fc1 = nn.Conv2d(
@@ -179,6 +181,88 @@ class ChannelGate(nn.Module):
         if self.return_gates:
             return x
         return input * x
+
+
+class MultiBlock(nn.Module):
+    r"""ConvNeXt Block. There are two equivalent implementations:
+    (1) DwConv -> LayerNorm (channels_first) -> 1x1 Conv -> GELU -> 1x1 Conv; all in (N, C, H, W)
+    (2) DwConv -> Permute to (N, H, W, C); LayerNorm (channels_last) -> Linear -> GELU -> Linear; Permute back
+    We use (2) as we find it slightly faster in PyTorch
+
+    Args:
+        dim (int): Number of input channels.
+        kernel_size (int): Sizes of the convolutional kernels of the convnext block. Default: 7
+        kernel_stride (int): Strides of the convolutional kernels of the convnext block. Default: 0
+        kernel_padding (int): Padding of the convolutional kernels of the convnext block. Default: 3
+        num_conv_blocks (int): Number of convulutioinal blocks that we pile to create a greater receptive file. Default: 1
+        drop_path (float): Stochastic depth rate. Default: 0.0
+        layer_scale_init_value (float): Init value for Layer Scale. Default: 1e-6.
+    """
+
+    def __init__(
+        self,
+        dim: int,
+        kernel_size=7,
+        kernel_stride=0,
+        kernel_padding=3,
+        num_conv_blocks=1,
+        drop_path=0.0,
+        layer_scale_init_value=1e-6,
+    ):
+        super().__init__()
+
+        self.conv_layers_stack = nn.ModuleList()
+        stacked_conv_total_out_channels = 0
+        for _ in range(num_conv_blocks):
+            self.dwconv = nn.Conv2d(
+                dim,
+                dim,
+                kernel_size=kernel_size,
+                stride=kernel_stride,
+                padding=kernel_padding,
+                groups=dim,
+            )  # depthwise conv
+            self.conv_layers_stack.append(self.dwconv)
+            stacked_conv_total_out_channels += self.dwconv.out_channels
+
+        reduction_factor_out_channels = stacked_conv_total_out_channels // dim
+        self.gate = ChannelGate(
+            in_channels=dim, reduction=reduction_factor_out_channels
+        )
+
+        self.norm = LayerNorm(dim, eps=1e-6)
+        self.pwconv1 = nn.Linear(
+            dim, 4 * dim
+        )  # pointwise/1x1 convs, implemented with linear layers
+        self.act = nn.GELU()
+        self.pwconv2 = nn.Linear(4 * dim, dim)
+        self.gamma = (
+            nn.Parameter(layer_scale_init_value * torch.ones((dim)), requires_grad=True)
+            if layer_scale_init_value > 0
+            else None
+        )
+        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
+
+    def forward(self, x: torch.Tensor):
+        input = x
+        # x = self.dwconv(x) # Old code when we only had one convolution
+        x_conv = torch.empty(0)
+        for convolution in self.conv_layers_stack:
+            x_conv_t = convolution(x)
+            x_conv = x_conv + self.gate(x_conv_t)
+        x = x_conv
+
+        x = x.permute(0, 2, 3, 1)  # (N, C, H, W) -> (N, H, W, C)
+        x = self.norm(x)
+        x = self.pwconv1(x)
+        x = self.act(x)
+        x = self.pwconv2(x)
+        if self.gamma is not None:
+            x = self.gamma * x
+        x = x.permute(0, 3, 1, 2)  # (N, H, W, C) -> (N, C, H, W)
+
+        x = input + self.drop_path(x)
+        return x
 
 
 class ConvNeXt(nn.Module):
