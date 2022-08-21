@@ -45,6 +45,27 @@ class LayerNorm(nn.Module):
             return x
 
 
+class Conv1x1Linear(nn.Module):
+    """1x1 convolution + bn (w/o non-linearity)."""
+
+    def __init__(
+        self, in_channels, out_channels, stride=1, padding=0, bias=False, bn=True
+    ):
+        super(Conv1x1Linear, self).__init__()
+        self.conv = nn.Conv2d(
+            in_channels, out_channels, 1, stride=stride, padding=padding, bias=bias
+        )
+        self.bn = None
+        if bn:
+            self.bn = nn.BatchNorm2d(out_channels)
+
+    def forward(self, x):
+        x = self.conv(x)
+        if self.bn is not None:
+            x = self.bn(x)
+        return x
+
+
 class Block(nn.Module):
     r"""ConvNeXt Block. There are two equivalent implementations:
     (1) DwConv -> LayerNorm (channels_first) -> 1x1 Conv -> GELU -> 1x1 Conv; all in (N, C, H, W)
