@@ -12,6 +12,42 @@ from typing import List, Union, Optional
 from .drop import DropPath
 
 
+class StackedConv(nn.Module):
+    """Lightweight convolution stream."""
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int,
+        kernel_stride: int,
+        kernel_padding: int,
+        groups: int,
+        depth=1,
+    ):
+        super(StackedConv, self).__init__()
+        layers = []
+        self.out_channels = 0
+
+        for _ in range(depth):
+            conv = nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=kernel_size,
+                stride=kernel_stride,
+                padding=kernel_padding,
+                groups=groups,
+            )  # depthwise conv
+            layers.append(conv)
+
+            self.out_channels += conv.out_channels
+
+        self.layers = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.layers(x)
+
+
 class LayerNorm(nn.Module):
     r"""LayerNorm that supports two data formats: channels_last (default) or channels_first.
     The ordering of the dimensions in the inputs. channels_last corresponds to inputs with
@@ -213,14 +249,15 @@ class MultiBlock(nn.Module):
 
         self.conv_layers_stack = nn.ModuleList()
         stacked_conv_total_out_channels = 0
-        for _ in range(num_conv_blocks):
-            self.dwconv = nn.Conv2d(
-                dim,
-                dim,
+        for num_blocks in range(1, num_conv_blocks + 1):
+            self.dwconv = StackedConv(
+                in_channels=dim,
+                out_channels=dim,
                 kernel_size=kernel_size,
-                stride=kernel_stride,
-                padding=kernel_padding,
+                kernel_stride=kernel_stride,
+                kernel_padding=kernel_padding,
                 groups=dim,
+                depth=num_blocks,
             )  # depthwise conv
             self.conv_layers_stack.append(self.dwconv)
             stacked_conv_total_out_channels += self.dwconv.out_channels
