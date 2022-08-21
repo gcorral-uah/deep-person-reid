@@ -283,11 +283,11 @@ class MultiBlock(nn.Module):
     def forward(self, x: torch.Tensor):
         input = x
         # x = self.dwconv(x) # Old code when we only had one convolution
-        x_conv = torch.empty(0)
+        x_conv = 0
         for convolution in self.conv_layers_stack:
             x_conv_t = convolution(x)
             x_conv = x_conv + self.gate(x_conv_t)
-        x = x_conv
+        x = x_conv #type: ignore
 
         x = x.permute(0, 2, 3, 1)  # (N, C, H, W) -> (N, H, W, C)
         x = self.norm(x)
