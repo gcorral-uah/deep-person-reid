@@ -9,7 +9,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .drop import DropPath
+import drop
 
 
 class Block(nn.Module):
@@ -40,7 +40,7 @@ class Block(nn.Module):
             if layer_scale_init_value > 0
             else None
         )
-        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
+        self.drop_path = drop.DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
     def forward(self, x):
         input = x

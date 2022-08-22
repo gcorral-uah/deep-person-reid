@@ -23,7 +23,7 @@ from default_config import (
     lr_scheduler_kwargs,
 )
 from default_config import get_default_config
-from .build_models import build_convnext
+import build_models
 
 
 def reset_config(cfg, args):
@@ -98,7 +98,7 @@ def main():
     datamanager = torchreid.data.ImageDataManager(**imagedata_kwargs(cfg))
 
     print("Building model: {}".format(cfg.model.name))
-    model = build_convnext(
+    model = build_models.build_convnext(
         num_classes=datamanager.num_train_pids,
         pretrained=cfg.model.pretrained,
     )
