@@ -20,9 +20,9 @@ from default_config import (
     imagedata_kwargs,
     optimizer_kwargs,
     engine_run_kwargs,
-    get_default_config,
     lr_scheduler_kwargs,
 )
+from default_config import get_default_config
 
 
 def reset_config(cfg, args):
@@ -97,10 +97,11 @@ def main():
     datamanager = torchreid.data.ImageDataManager(**imagedata_kwargs(cfg))
 
     print("Building model: {}".format(cfg.model.name))
+    # FIXME(Gonzalo): We can't use torchreid.models.build_model with a custom model.
     model = torchreid.models.build_model(
         name=cfg.model.name,
         num_classes=datamanager.num_train_pids,
-        loss="softmax",
+        loss=cfg.loss.name,
         pretrained=cfg.model.pretrained,
     )
     num_params, flops = compute_model_complexity(
@@ -131,12 +132,6 @@ def main():
         label_smooth=cfg.loss.softmax.label_smooth,
     )
     engine.run(**engine_run_kwargs(cfg))
-
-    print("*** Display the found architecture ***")
-    if cfg.use_gpu:
-        model.module.build_child_graph()
-    else:
-        model.build_child_graph()
 
 
 if __name__ == "__main__":
