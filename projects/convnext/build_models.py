@@ -1,9 +1,9 @@
-from .convnext import ConvNeXt
+import convnext
 import torch
 
 
 def build_convnext(num_classes=1000, pretrained=True, **kwargs):
-    model = ConvNeXt(
+    model = convnext.ConvNeXt(
         num_classes=num_classes,
         depths=[3, 3, 27, 3],
         dims=[128, 256, 512, 1024],
