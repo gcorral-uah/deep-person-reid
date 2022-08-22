@@ -282,10 +282,9 @@ class MultiBlock(nn.Module):
         return x
 
 
-class ConvNeXt(nn.Module):
+class ConvNeXtOSNet(nn.Module):
     r"""ConvNeXt
-        A PyTorch impl of : `A ConvNet for the 2020s`  -
-          https://arxiv.org/pdf/2201.03545.pdf
+        A PyTorch impl of : `A ConvNet for the 2020s`, with added ideas from OSNet.
 
     Args:
         in_chans (int): Number of input image channels. Default: 3
@@ -349,7 +348,7 @@ class ConvNeXt(nn.Module):
         for i in range(4):
             stage = nn.Sequential(
                 *[
-                    Block(
+                    MultiBlock(
                         dim=dims[i],
                         kernel_size=kernel_sizes[2],
                         kernel_stride=kernel_strides[2],
