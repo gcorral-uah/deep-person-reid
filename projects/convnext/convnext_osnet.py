@@ -287,7 +287,7 @@ class MultiBlock(nn.Module):
         for convolution in self.conv_layers_stack:
             x_conv_t = convolution(x)
             x_conv = x_conv + self.gate(x_conv_t)
-        x = x_conv #type: ignore
+        x = x_conv  # type: ignore
 
         x = x.permute(0, 2, 3, 1)  # (N, C, H, W) -> (N, H, W, C)
         x = self.norm(x)
