@@ -1,5 +1,6 @@
 import convnext
 import torch
+import convnext_osnet
 
 
 def build_convnext(num_classes=1000, pretrained=True, **kwargs):
@@ -22,8 +23,24 @@ def build_convnext(num_classes=1000, pretrained=True, **kwargs):
         # load_state_dict, so that we can avoid an error when the
         # 'head.weight/bias' keys are not present in the pretrained dict.
         weights = checkpoint["model"]
-        del weights['head.weight']
-        del weights['head.bias']
+        del weights["head.weight"]
+        del weights["head.bias"]
         model.load_state_dict(weights, strict=False)
+
+    return model
+
+
+def build_convnext_osnet(num_classes=1000, pretrained=False, **kwargs):
+    model = convnext_osnet.ConvNeXtOSNet(
+        num_classes=num_classes,
+        depths=[3, 3, 27, 3],
+        dims=[128, 256, 512, 1024],
+        kernel_sizes=[4, 2, 7],
+        kernel_strides=[4, 2, 1],
+        kernel_paddings=[0, 0, 3],
+        **kwargs
+    )
+    if pretrained:
+        raise NotImplementedError
 
     return model
