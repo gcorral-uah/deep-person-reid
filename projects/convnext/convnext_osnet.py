@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import List, Union, Optional
-from .drop import DropPath
+import drop
 
 
 class StackedConv(nn.Module):
@@ -194,7 +194,7 @@ class MultiBlock(nn.Module):
             if layer_scale_init_value > 0
             else None
         )
-        self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
+        self.drop_path = drop.DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
     def forward(self, x: torch.Tensor):
         input = x
