@@ -6,8 +6,7 @@ from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
 from augmentations import CutoutPIL
-from distributed import num_distrib, print_at_master
-from timm.data.loader import OrderedDistributedSampler
+
 
 def create_imagenet_data_loaders(args):
     data_path_train = os.path.join(args.data_path, 'imagenet21k_train')
@@ -26,14 +25,11 @@ def create_imagenet_data_loaders(args):
 
     train_dataset = ImageFolder(data_path_train, transform=train_transform)
     val_dataset = ImageFolder(data_path_val, transform=val_transform)
-    print_at_master("length train dataset: {}".format(len(train_dataset)))
-    print_at_master("length val dataset: {}".format(len(val_dataset)))
+    print("length train dataset: {}".format(len(train_dataset)))
+    print("length val dataset: {}".format(len(val_dataset)))
 
     sampler_train = None
     sampler_val = None
-    if num_distrib() > 1:
-        sampler_train = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        sampler_val = OrderedDistributedSampler(val_dataset)
 
     # Pytorch Data loader
     train_loader = torch.utils.data.DataLoader(
@@ -58,7 +54,7 @@ class PrefetchLoader:
         first = True
         for batch in self.loader:
             with torch.cuda.stream(self.stream):  # stream - parallel
-                self.next_input = batch[0].cuda(non_blocking=True) # note - (0-1) normalization in .ToTensor()
+                self.next_input = batch[0].cuda(non_blocking=True)  # note - (0-1) normalization in .ToTensor()
                 self.next_target = batch[1].cuda(non_blocking=True)
 
             if not first:
@@ -70,7 +66,8 @@ class PrefetchLoader:
             input = self.next_input
             target = self.next_target
 
-            # Ensures that the tensor memory is not reused for another tensor until all current work queued on stream are complete.
+            # Ensures that the tensor memory is not reused for another tensor until all current work queued on stream
+            # are complete.
             input.record_stream(torch.cuda.current_stream())
             target.record_stream(torch.cuda.current_stream())
 

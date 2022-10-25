@@ -16,15 +16,25 @@ from torchreid.utils import (
     compute_model_complexity,
 )
 
-from imagenet_data_loader.default_config import (
+from default_config import (
     imagedata_kwargs,
     optimizer_kwargs,
     engine_run_kwargs,
     lr_scheduler_kwargs,
 )
-from imagenet_data_loader.default_config import get_default_config
-from convnext_impl.build_models import build_convnext
-import imagenet_data_loader.imagenet_preprocessed_data_loader as imagenet
+from default_config import get_default_config
+import build_models
+
+
+def reset_config(cfg, args):
+    if args.root:
+        cfg.data.root = args.root
+    if args.sources:
+        cfg.data.sources = args.sources
+    if args.targets:
+        cfg.data.targets = args.targets
+    if args.transforms:
+        cfg.data.transforms = args.transforms
 
 
 def main():
@@ -34,13 +44,41 @@ def main():
     parser.add_argument(
         "--config-file", type=str, default="", help="path to config file"
     )
-    parser.add_argument("--gpu-devices", type=str, default="")
+    parser.add_argument(
+        "-s",
+        "--sources",
+        type=str,
+        nargs="+",
+        help="source datasets (delimited by space)",
+    )
+    parser.add_argument(
+        "-t",
+        "--targets",
+        type=str,
+        nargs="+",
+        help="target datasets (delimited by space)",
+    )
+    parser.add_argument("--transforms", type=str, nargs="+", help="data augmentation")
+    parser.add_argument("--root", type=str, default="", help="path to data root")
+    parser.add_argument(
+        "--gpu-devices",
+        type=str,
+        default="",
+    )
+    parser.add_argument(
+        "opts",
+        default=None,
+        nargs=argparse.REMAINDER,
+        help="Modify config options using the command-line",
+    )
     args = parser.parse_args()
 
     cfg = get_default_config()
     cfg.use_gpu = torch.cuda.is_available()
     if args.config_file:
         cfg.merge_from_file(args.config_file)
+    reset_config(cfg, args)
+    cfg.merge_from_list(args.opts)
     set_random_seed(cfg.train.seed)
 
     if cfg.use_gpu and args.gpu_devices:
@@ -58,11 +96,9 @@ def main():
         torch.backends.cudnn.benchmark = True
 
     datamanager = torchreid.data.ImageDataManager(**imagedata_kwargs(cfg))
-    imagenet_args = {}
-    train_loader, val_loader = imagenet.create_imagenet_data_loaders(imagenet_args)
 
     print("Building model: {}".format(cfg.model.name))
-    model = build_convnext(
+    model = build_models.build_convnext(
         num_classes=datamanager.num_train_pids,
         pretrained=cfg.model.pretrained,
     )
