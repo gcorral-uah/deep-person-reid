@@ -45,7 +45,7 @@ class Cutout:
         mask = np.ones((img_height, img_width, num_channels))
         zeros = np.zeros((mask_height, mask_width, num_channels))
         mask[
-            upper_coord[0] : lower_coord[0], upper_coord[1] : lower_coord[1], :
+        upper_coord[0]: lower_coord[0], upper_coord[1]: lower_coord[1], :
         ] = zeros
         return mask, upper_coord, lower_coord
 
@@ -63,17 +63,8 @@ class Cutout:
 
 
 class ImageNetPolicy(object):
-    """Randomly choose one of the best 24 Sub-policies on ImageNet.
-
-    Example:
-    >>> policy = ImageNetPolicy()
-    >>> transformed = policy(image)
-
-    Example as a PyTorch Transform:
-    >>> transform=transforms.Compose([
-    >>>     transforms.Resize(256),
-    >>>     ImageNetPolicy(),
-    >>>     transforms.ToTensor()])
+    """
+    Randomly choose one of the best 24 Sub-policies on ImageNet.
     """
 
     def __init__(self, fillcolor=(128, 128, 128)):
@@ -119,17 +110,8 @@ class ImageNetPolicy(object):
 
 
 class CIFAR10PolicyAll(object):
-    """Randomly choose one of the best 25 Sub-policies on CIFAR10.
-
-    Example:
-    >>> policy = CIFAR10Policy()
-    >>> transformed = policy(image)
-
-    Example as a PyTorch Transform:
-    >>> transform=transforms.Compose([
-    >>>     transforms.Resize(256),
-    >>>     CIFAR10Policy(),
-    >>>     transforms.ToTensor()])
+    """
+    Randomly choose one of the best 25 Sub-policies on CIFAR10.
     """
 
     def __init__(self, fillcolor=(128, 128, 128)):
@@ -240,17 +222,8 @@ class CIFAR10PolicyAll(object):
 
 
 class CIFAR10Policy(object):
-    """Randomly choose one of the best 25 Sub-policies on CIFAR10.
-
-    Example:
-    >>> policy = CIFAR10Policy()
-    >>> transformed = policy(image)
-
-    Example as a PyTorch Transform:
-    >>> transform=transforms.Compose([
-    >>>     transforms.Resize(256),
-    >>>     CIFAR10Policy(),
-    >>>     transforms.ToTensor()])
+    """
+    Randomly choose one of the best 25 Sub-policies on CIFAR10.
     """
 
     def __init__(self, fillcolor=(128, 128, 128)):
@@ -296,17 +269,8 @@ class CIFAR10Policy(object):
 
 
 class SVHNPolicy(object):
-    """Randomly choose one of the best 25 Sub-policies on SVHN.
-
-    Example:
-    >>> policy = SVHNPolicy()
-    >>> transformed = policy(image)
-
-    Example as a PyTorch Transform:
-    >>> transform=transforms.Compose([
-    >>>     transforms.Resize(256),
-    >>>     SVHNPolicy(),
-    >>>     transforms.ToTensor()])
+    """
+    Randomly choose one of the best 25 Sub-policies on SVHN.
     """
 
     def __init__(self, fillcolor=(128, 128, 128)):
@@ -352,14 +316,14 @@ class SVHNPolicy(object):
 
 class SubPolicy(object):
     def __init__(
-        self,
-        p1,
-        operation1,
-        magnitude_idx1,
-        p2,
-        operation2,
-        magnitude_idx2,
-        fillcolor=(128, 128, 128),
+            self,
+            p1,
+            operation1,
+            magnitude_idx1,
+            p2,
+            operation2,
+            magnitude_idx2,
+            fillcolor=(128, 128, 128),
     ):
         ranges = {
             "shearx": np.linspace(0, 0.3, 10),
