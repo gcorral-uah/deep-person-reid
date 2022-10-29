@@ -10,16 +10,24 @@ import imagenet_data_loader.imagenet_preprocessed_data_loader as imagenet
 
 
 def main():
-    imagenet_args = {}
-    rain_loader, val_loader = imagenet.create_imagenet_data_loaders(imagenet_args)
-    imagenet_dataset_parameters = imagenet.imagenet_data()
+    imagenet_loader_args = {
+        # Path to the data (with folders imagenet21k_train and imagenet21k_val)
+        "data_path": "",
+        "image_size": 224,
+        "batch_size": 64,
+        # How many subprocess to use to load the data (0 load in main process).
+        "num_workers": 0,
+    }
+    train_loader, validation_loader = imagenet.create_imagenet_data_loaders(
+        imagenet_loader_args
+    )
 
     print("Building model: {}")
-    is_pretrained = False
-    model = build_convnext(
-        num_classes=imagenet_dataset_parameters["num_training_classes"],
-        pretrained=is_pretrained,
-    )
+    convnext_config = {
+        "num_classes": imagenet.imagenet_data().get("num_training_classes", 10450),
+        "pretrained": False,
+    }
+    model = build_convnext(**convnext_config)
 
 
 if __name__ == "__main__":
