@@ -12,12 +12,12 @@ from tqdm import tqdm
 
 
 def main():
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 140
     MODEL_PATH = "convnext_imagenet.pth"
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     imagenet_loader_args = {
         # Path to the data (with folders imagenet21k_train and imagenet21k_val)
-        "data_path": "",
+        "data_path": "/mnt/data1/gonzalo.corral/imagenet21k/",
         "image_size": 224,
         "batch_size": 64,
         # How many subprocess to use to load the data (0 load in main process).
