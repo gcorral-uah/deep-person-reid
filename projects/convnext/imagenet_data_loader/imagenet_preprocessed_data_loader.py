@@ -58,8 +58,8 @@ def create_imagenet_data_loaders(args):
         sampler=sampler_val,
     )
 
-    train_loader = PrefetchLoader(train_loader)
-    val_loader = PrefetchLoader(val_loader)
+    # train_loader = PrefetchLoader(train_loader)
+    # val_loader = PrefetchLoader(val_loader)
     return train_loader, val_loader
 
 
