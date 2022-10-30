@@ -48,33 +48,32 @@ def main():
 
         total_train_loss = 0.0
         avg_training_loss = 0.0
-        cur_train_iter = 0
-        for data_inputs, data_labels in train_loader:
+        for cur_train_iter, training_data in enumerate(train_loader):
+            data_inputs, data_labels = training_data
 
-            # Step 1: Move input data to device (only strictly necessary if we use GPU)
+            # Move input data to device (only strictly necessary if we use GPU)
             data_inputs = data_inputs.to(device)
             data_labels = data_labels.to(device)
 
-            # Step 2: Run the model on the input data
+            # Run the model on the input data
             training_outputs = model(data_inputs)
-            # Step 3: Calculate the loss
+            # Calculate the loss
             loss = loss_function(training_outputs, data_labels)
             current_epoch_loss = loss
 
-            # Step 4: Perform backpropagation
+            # Perform backpropagation
             # Before calculating the gradients, we need to ensure that they are all zero.
             # The gradients would not be overwritten, but actually added to the existing ones.
             optimizer.zero_grad()
             # Perform backpropagation
             loss.backward()
 
-            # Step 5: Update the parameters
+            #  Update the parameters
             optimizer.step()
 
-            # Calculate Loss
+            # Calculate the total and average loss
             total_train_loss += loss
             avg_training_loss = total_train_loss / (cur_train_iter + 1)
-            cur_train_iter = cur_train_iter + 1
 
         model.train(False)
 
@@ -100,7 +99,7 @@ def main():
         )
 
         total_validation_loss = 0.0
-        for i, validation_data in enumerate(validation_loader):
+        for cur_validation_iter, validation_data in enumerate(validation_loader):
             validation_inputs, validation_labels = validation_data
             validation_inputs = validation_inputs.to(device)
             validation_labels = validation_labels.to(device)
@@ -108,7 +107,7 @@ def main():
             validation_loss = loss_function(validation_outputs, validation_labels)
             total_validation_loss += validation_loss
 
-            avg_validation_loss = total_validation_loss / (i + 1)
+            avg_validation_loss = total_validation_loss / (cur_validation_iter + 1)
             print(
                 "LOSS train {} valid {}".format(avg_training_loss, avg_validation_loss)
             )
