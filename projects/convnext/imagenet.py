@@ -10,6 +10,7 @@ import torch
 from tqdm import tqdm
 import glob
 import re
+import imagenet_data_loader.early_stopping as early_stopping
 
 
 def main():
@@ -65,6 +66,7 @@ def main():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device)
 
+    earlystopping = early_stopping.EarlyStopping(patience=7, verbose=True)
     # Training loop
     for epoch in tqdm(range(start_epoch, NUM_EPOCHS)):
         if best_validation_loss is None:
@@ -137,6 +139,17 @@ def main():
                 best_validation_loss = avg_validation_loss
                 # Save the final model
                 torch.save(convnext_model.state_dict(), MODEL_PATH)
+
+            # early_stopping needs the validation loss to check if it has
+            # decresed, and if it has, it will make a checkpoint of the current
+            # model. If the best validation value hasn't improved in some time
+            # it sets the early_stop instance variable, so we know that we need
+            # to stop.
+            earlystopping(avg_validation_loss, convnext_model)
+            if earlystopping.early_stop:
+                print("Early stopping")
+                break
+
 
 
 if __name__ == "__main__":
