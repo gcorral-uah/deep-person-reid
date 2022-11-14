@@ -9,6 +9,8 @@ from convnext_impl.build_models import build_convnext
 import imagenet_data_loader.imagenet_preprocessed_data_loader as imagenet
 import torch
 from tqdm import tqdm
+import glob
+import re
 
 
 def main():
@@ -37,10 +39,36 @@ def main():
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters())
 
+    # Determine if there is a training checkpoint and load it.
+    latest_epoch = None
+    TRAINING_EPOCH_PATH_GLOB = r"convnext_imagenet_epoch_*.pth"
+    training_epochs = glob.glob(TRAINING_EPOCH_PATH_GLOB)
+    if len(training_epochs) > 0:
+        training_epochs.sort(
+            key=lambda name: [int(s) for s in re.findall(r"\b\d+\b", name)][0],
+            reverse=True,
+        )
+        latest_epoch = training_epochs[0]
+
     # Bogus high number to record the best loss in any epoch
     best_validation_loss = 1_000_000.0
+
+    # Starting epoch (in case we need to restart training from a previous epoch)
+    start_epoch = 0
+    if latest_epoch is not None:
+        checkpoint = torch.load(latest_epoch)
+        start_epoch = checkpoint["epoch"] + 1
+        model.load_state_dict(checkpoint["state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        best_validation_loss = checkpoint["best_loss"]
+        model = model.to(device)
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
+
     # Training loop
-    for epoch in tqdm(range(NUM_EPOCHS)):
+    for epoch in tqdm(range(start_epoch, NUM_EPOCHS)):
         EPOCH_PATH = f"convnext_imagenet_epoch_{epoch}.pth"
         # Make sure gradient tracking is on, and do a pass over the data
         model.train(True)
@@ -77,23 +105,13 @@ def main():
 
         model.train(False)
 
-        # Save the current state of the epoch, to allow to resume training later. To load do:
-        # checkpoint = torch.load(PATH)
-        # model.load_state_dict(checkpoint['model_state_dict'])
-        # model.to(device)
-        # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        # epoch = checkpoint['epoch']
-        # loss = checkpoint['loss']
-        #
-        # model.eval()
-        # or
-        # model.train()
         torch.save(
             {
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss": current_epoch_loss,
+                "best_loss": best_validation_loss,
             },
             EPOCH_PATH,
         )
