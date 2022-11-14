@@ -80,6 +80,7 @@ class LayerNorm(nn.Module):
             x = self.weight[:, None, None] * x + self.bias[:, None, None]
             return x
 
+
 class ChannelGate(nn.Module):
     r"""A mini-network that generates channel-wise gates conditioned on input tensor.
     It allows the mix of the result of multiple networks depending on the input image.
@@ -324,3 +325,19 @@ class ConvNeXtOSNet(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+
+
+def build_convnext_osnet(num_classes=1000, pretrained=False, **kwargs):
+    model = ConvNeXtOSNet(
+        num_classes=num_classes,
+        depths=[3, 3, 27, 3],
+        dims=[128, 256, 512, 1024],
+        kernel_sizes=[4, 2, 7],
+        kernel_strides=[4, 2, 1],
+        kernel_paddings=[0, 0, 3],
+        **kwargs
+    )
+    if pretrained:
+        raise NotImplementedError
+
+    return model
