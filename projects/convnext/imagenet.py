@@ -33,10 +33,10 @@ def main():
         "num_classes": imagenet.imagenet_data().get("num_training_classes", 10450),
         "pretrained": False,
     }
-    model = build_convnext(**convnext_config)
-    model.to(device)
+    convnext_model = build_convnext(**convnext_config)
+    convnext_model.to(device)
     loss_function = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(convnext_model.parameters())
 
     # Determine if there is a training checkpoint and load it.
     latest_epoch = None
@@ -49,18 +49,17 @@ def main():
         )
         latest_epoch = training_epochs[0]
 
-    # Bogus high number to record the best loss in any epoch
-    best_validation_loss = 1_000_000.0
 
+    best_validation_loss = None
     # Starting epoch (in case we need to restart training from a previous epoch)
     start_epoch = 0
     if latest_epoch is not None:
         checkpoint = torch.load(latest_epoch)
         start_epoch = checkpoint["epoch"] + 1
-        model.load_state_dict(checkpoint["state_dict"])
+        convnext_model.load_state_dict(checkpoint["state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         best_validation_loss = checkpoint["best_loss"]
-        model = model.to(device)
+        convnext_model = convnext_model.to(device)
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
@@ -68,9 +67,16 @@ def main():
 
     # Training loop
     for epoch in tqdm(range(start_epoch, NUM_EPOCHS)):
+        if best_validation_loss is None:
+            # Bogus high number to record the best loss in an epoch. This is
+            # used if we aren't continuing training from an saved epoch
+            best_validation_loss = 1_000_000.0
+        else:
+            pass
+
         EPOCH_PATH = f"convnext_imagenet_epoch_{epoch}.pth"
         # Make sure gradient tracking is on, and do a pass over the data
-        model.train(True)
+        convnext_model.train(True)
         current_epoch_loss = None
 
         total_train_loss = 0.0
@@ -82,7 +88,7 @@ def main():
             data_labels = data_labels.to(device)
 
             # Run the model on the input data
-            training_outputs = model(data_inputs)
+            training_outputs = convnext_model(data_inputs)
             # Calculate the loss
             loss = loss_function(training_outputs, data_labels)
             current_epoch_loss = loss
@@ -101,12 +107,12 @@ def main():
             total_train_loss += loss
             avg_training_loss = total_train_loss / (cur_train_iter + 1)
 
-        model.train(False)
+        convnext_model.train(False)
 
         torch.save(
             {
                 "epoch": epoch,
-                "model_state_dict": model.state_dict(),
+                "model_state_dict": convnext_model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "loss": current_epoch_loss,
                 "best_loss": best_validation_loss,
@@ -119,7 +125,7 @@ def main():
             validation_inputs, validation_labels = validation_data
             validation_inputs = validation_inputs.to(device)
             validation_labels = validation_labels.to(device)
-            validation_outputs = model(validation_inputs)
+            validation_outputs = convnext_model(validation_inputs)
             validation_loss = loss_function(validation_outputs, validation_labels)
             total_validation_loss += validation_loss
 
@@ -130,7 +136,7 @@ def main():
             if avg_validation_loss < best_validation_loss:
                 best_validation_loss = avg_validation_loss
                 # Save the final model
-                torch.save(model.state_dict(), MODEL_PATH)
+                torch.save(convnext_model.state_dict(), MODEL_PATH)
 
 
 if __name__ == "__main__":
