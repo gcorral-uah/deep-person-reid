@@ -74,7 +74,6 @@ def main():
         current_epoch_loss = None
 
         total_train_loss = 0.0
-        avg_training_loss = 0.0
         for cur_train_iter, training_data in enumerate(train_loader):
             data_inputs, data_labels = training_data
 
@@ -125,9 +124,7 @@ def main():
             total_validation_loss += validation_loss
 
             avg_validation_loss = total_validation_loss / (cur_validation_iter + 1)
-            print(
-                "LOSS train {} valid {}".format(avg_training_loss, avg_validation_loss)
-            )
+            print(f"Validation loss = {avg_validation_loss}")
 
             # Track best performance, and save the model's state
             if avg_validation_loss < best_validation_loss:
