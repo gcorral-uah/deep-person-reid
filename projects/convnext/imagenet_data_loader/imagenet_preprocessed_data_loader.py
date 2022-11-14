@@ -16,20 +16,20 @@ def imagenet_data():
 
 
 def create_imagenet_data_loaders(args):
-    data_path_train = os.path.join(args.data_path, "imagenet21k_train")
+    data_path_train = os.path.join(args.get("data_path"), "imagenet21k_train")
     train_transform = transforms.Compose(
         [
-            transforms.Resize((args.image_size, args.image_size)),
+            transforms.Resize((args.get("image_size"), args.get("image_size"))),
             CutoutPIL(cutout_factor=0.5),
             RandAugment(),
             transforms.ToTensor(),
         ]
     )
 
-    data_path_val = os.path.join(args.data_path, "imagenet21k_val")
+    data_path_val = os.path.join(args.get("data_path"), "imagenet21k_val")
     val_transform = transforms.Compose(
         [
-            transforms.Resize((args.image_size, args.image_size)),
+            transforms.Resize((args.get("image_size"), args.get("image_size"))),
             transforms.ToTensor(),
         ]
     )
@@ -45,18 +45,18 @@ def create_imagenet_data_loaders(args):
     # Pytorch Data loader
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=args.batch_size,
+        batch_size=args.get("batch_size"),
         shuffle=sampler_train is None,
-        num_workers=args.num_workers,
+        num_workers=args.get("num_workers"),
         pin_memory=True,
         sampler=sampler_train,
     )
 
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
-        batch_size=args.batch_size,
+        batch_size=args.get("batch_size"),
         shuffle=False,
-        num_workers=args.num_workers,
+        num_workers=args.get("num_workers"),
         pin_memory=False,
         sampler=sampler_val,
     )
@@ -586,6 +586,7 @@ class RandAugment:
 
     def __repr__(self):
         return "Random Augment Policy"
+
 
 # Code from
 # https://github.com/Alibaba-MIIL/ASL/blob/main/src/helper_functions/helper_functions.py
