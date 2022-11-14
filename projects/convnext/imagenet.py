@@ -4,7 +4,7 @@
 # The saving and loading of the checkpoint is based on
 # https://web.archive.org/web/20201106104658/https://chshih2.github.io/blog/2020/10/06/Pytorch-continue-training/
 
-from convnext_impl.build_models import build_convnext
+from convnext_impl.convnext_osnet import build_convnext_osnet
 import imagenet_data_loader.imagenet_preprocessed_data_loader as imagenet
 import torch
 from tqdm import tqdm
@@ -34,7 +34,7 @@ def main():
         "num_classes": imagenet.imagenet_data().get("num_training_classes", 10450),
         "pretrained": False,
     }
-    convnext_model = build_convnext(**convnext_config)
+    convnext_model = build_convnext_osnet(**convnext_config)
     convnext_model.to(device)
     loss_function = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(convnext_model.parameters())
