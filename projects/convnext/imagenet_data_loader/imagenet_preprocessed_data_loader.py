@@ -591,6 +591,8 @@ class RandAugment:
 # Code from
 # https://github.com/Alibaba-MIIL/ASL/blob/main/src/helper_functions/helper_functions.py
 # licenced under MIT
+
+
 class CutoutPIL(object):
     def __init__(self, cutout_factor=0.5):
         self.cutout_factor = cutout_factor
@@ -614,4 +616,4 @@ class CutoutPIL(object):
         )
         img_draw.rectangle([x1, y1, x2, y2], fill=fill_color)
 
-        return
+        return x
