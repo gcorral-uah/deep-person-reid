@@ -21,9 +21,9 @@ def main():
         # Path to the data (with folders imagenet21k_train and imagenet21k_val)
         "data_path": "/mnt/data1/gonzalo.corral/imagenet21k_resized/",
         "image_size": 224,
-        "batch_size": 64,
+        "batch_size": 32,
         # How many subprocess to use to load the data (0 load in main process).
-        "num_workers": 0,
+        "num_workers": 8,
     }
     train_loader, validation_loader = imagenet.create_imagenet_data_loaders(
         imagenet_loader_args
