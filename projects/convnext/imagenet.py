@@ -42,6 +42,9 @@ def main():
     train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
         imagenet_1k_loader_args
     )
+
+    train_loader, validation_loader = train_loader_1k, validation_loader_1k
+
     print("Building model: {}")
     convnext_config = {
         "num_classes": imagenet.imagenet_data().get("num_training_classes", 10450),
