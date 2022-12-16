@@ -30,6 +30,18 @@ def main():
         imagenet_22k_loader_args
     )
 
+    imagenet_1k_loader_args = {
+        # Path to the data (with folders imagenet1k dataset)
+        "data_path": "/data1/gonzalo.corral/ILSVRC2012/",
+        "image_height": 224,
+        "image_width": 224,
+        "batch_size": 32,
+        # How many subprocess to use to load the data (0 load in main process).
+        "num_workers": 8,
+    }
+    train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
+        imagenet_1k_loader_args
+    )
     print("Building model: {}")
     convnext_config = {
         "num_classes": imagenet.imagenet_data().get("num_training_classes", 10450),
