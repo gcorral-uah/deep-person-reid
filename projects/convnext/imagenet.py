@@ -17,16 +17,17 @@ def main():
     NUM_EPOCHS = 140
     MODEL_PATH = "convnext_imagenet.pth"
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    imagenet_loader_args = {
+    imagenet_22k_loader_args = {
         # Path to the data (with folders imagenet21k_train and imagenet21k_val)
         "data_path": "/mnt/data1/gonzalo.corral/imagenet21k_resized/",
-        "image_size": 224,
+        "image_height": 224,
+        "image_width": 224,
         "batch_size": 32,
         # How many subprocess to use to load the data (0 load in main process).
         "num_workers": 8,
     }
-    train_loader, validation_loader = imagenet.create_imagenet_data_loaders(
-        imagenet_loader_args
+    train_loader_22k, validation_loader_22k = imagenet.create_imagenet_22k_data_loaders(
+        imagenet_22k_loader_args
     )
 
     print("Building model: {}")
@@ -49,7 +50,6 @@ def main():
             reverse=True,
         )
         latest_epoch = training_epochs[0]
-
 
     best_validation_loss = None
     # Starting epoch (in case we need to restart training from a previous epoch)
@@ -149,7 +149,6 @@ def main():
             if earlystopping.early_stop:
                 print("Early stopping")
                 break
-
 
 
 if __name__ == "__main__":
