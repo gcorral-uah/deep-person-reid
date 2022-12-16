@@ -4,7 +4,7 @@ import torch
 from torchvision import transforms
 from torchvision.datasets import ImageFolder, ImageNet
 from torch.utils.data import DataLoader
-
+from typing import Union, Dict
 
 import random
 
@@ -16,7 +16,7 @@ def imagenet_data():
     return {"num_training_classes": 10450, "num_test_classes": 10450}
 
 
-def create_imagenet_22k_data_loaders(args: dict[str, str | int]):
+def create_imagenet_22k_data_loaders(args: Dict[str, Union[str,int]]):
     data_path = args.get("data_path")
     batch_size = args.get("batch_size")
     num_workers = args.get("num_workers")
@@ -85,7 +85,7 @@ def create_imagenet_22k_data_loaders(args: dict[str, str | int]):
     return train_loader, val_loader
 
 
-def create_imagenet_1k_data_loaders(args: dict[str, str | int]):
+def create_imagenet_1k_data_loaders(args: Dict[str, Union[str,int]]):
     data_path = args.get("data_path")
     batch_size = args.get("batch_size")
     num_workers = args.get("num_workers")
