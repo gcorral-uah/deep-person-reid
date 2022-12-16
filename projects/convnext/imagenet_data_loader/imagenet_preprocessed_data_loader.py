@@ -3,6 +3,7 @@ import os
 import torch
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
+from torch.utils.data import DataLoader
 
 
 import random
@@ -15,21 +16,41 @@ def imagenet_data():
     return {"num_training_classes": 10450, "num_test_classes": 10450}
 
 
-def create_imagenet_data_loaders(args):
-    data_path_train = os.path.join(args.get("data_path"), "imagenet21k_train")
+def create_imagenet_22k_data_loaders(args: dict[str, str | int]):
+    data_path = args.get("data_path")
+    batch_size = args.get("batch_size")
+    num_workers = args.get("num_workers")
+    image_height = args.get("image_height")
+    image_width = args.get("image_width")
+
+    assert data_path is not None and isinstance(data_path, str), "Invalid path"
+    assert (
+        batch_size is not None and isinstance(batch_size, int) and batch_size > 0
+    ), "Invalid batch_size"
+    assert (
+        num_workers is not None and isinstance(num_workers, int) and num_workers > 0
+    ), "Invalid num_workers"
+    assert (
+        image_height is not None and isinstance(image_height, int) and image_height > 0
+    ), "Invalid image_height"
+    assert (
+        image_width is not None and isinstance(image_width, int) and image_width > 0
+    ), "Invalid image_width"
+
+    data_path_train = os.path.join(data_path, "imagenet21k_train")
     train_transform = transforms.Compose(
         [
-            transforms.Resize((args.get("image_size"), args.get("image_size"))),
+            transforms.Resize((image_height, image_width)),
             CutoutPIL(cutout_factor=0.5),
             RandAugment(),
             transforms.ToTensor(),
         ]
     )
 
-    data_path_val = os.path.join(args.get("data_path"), "imagenet21k_val")
+    data_path_val = os.path.join(data_path, "imagenet21k_val")
     val_transform = transforms.Compose(
         [
-            transforms.Resize((args.get("image_size"), args.get("image_size"))),
+            transforms.Resize((image_height, image_width)),
             transforms.ToTensor(),
         ]
     )
@@ -40,23 +61,21 @@ def create_imagenet_data_loaders(args):
     print("length val dataset: {}".format(len(val_dataset)))
 
     sampler_train = None
-    sampler_val = None
-
-    # Pytorch Data loader
-    train_loader = torch.utils.data.DataLoader(
+    train_loader = DataLoader(
         train_dataset,
-        batch_size=args.get("batch_size"),
+        batch_size=batch_size,
         shuffle=sampler_train is None,
-        num_workers=args.get("num_workers"),
+        num_workers=num_workers,
         pin_memory=True,
         sampler=sampler_train,
     )
 
-    val_loader = torch.utils.data.DataLoader(
+    sampler_val = None
+    val_loader = DataLoader(
         val_dataset,
-        batch_size=args.get("batch_size"),
+        batch_size=batch_size,
         shuffle=False,
-        num_workers=args.get("num_workers"),
+        num_workers=num_workers,
         pin_memory=False,
         sampler=sampler_val,
     )

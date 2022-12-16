@@ -11,7 +11,7 @@ import torch
 import torch.optim
 from torch.optim import lr_scheduler
 
-from imagenet_preprocessed_data_loader import create_imagenet_data_loaders
+from imagenet_preprocessed_data_loader import create_imagenet_22k_data_loaders
 from src_files.helper_functions.general_helper_functions import (
     accuracy,
     AverageMeter,
@@ -57,7 +57,7 @@ def main():
     optimizer = create_optimizer(model, args)
 
     # Data loading
-    train_loader, val_loader = create_imagenet_data_loaders(args)
+    train_loader, val_loader = create_imagenet_22k_data_loaders(args)
 
     # Actuall Training
     train_21k(model, train_loader, val_loader, optimizer, args)
