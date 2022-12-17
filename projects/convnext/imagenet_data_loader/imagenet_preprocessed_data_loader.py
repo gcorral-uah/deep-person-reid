@@ -68,6 +68,7 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str,int]]):
         num_workers=num_workers,
         pin_memory=True,
         sampler=sampler_train,
+        drop_last=True
     )
 
     sampler_val = None
@@ -78,6 +79,7 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str,int]]):
         num_workers=num_workers,
         pin_memory=False,
         sampler=sampler_val,
+        drop_last=True
     )
 
     # train_loader = PrefetchLoader(train_loader)
