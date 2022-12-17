@@ -100,6 +100,7 @@ def main():
 
         total_train_loss = 0.0
         for cur_train_iter, training_data in enumerate(train_loader):
+            print(f"In iteration: {cur_train_iter} and epoch: {epoch} of training loader")
             data_inputs, data_labels = training_data
 
             # Move input data to device (only strictly necessary if we use GPU)
@@ -126,7 +127,9 @@ def main():
             total_train_loss += loss
             avg_training_loss = total_train_loss / (cur_train_iter + 1)
 
+        print(f"I reached the end of training in epoch {epoch}")
         convnext_model.train(False)
+
 
         torch.save(
             {
@@ -139,8 +142,10 @@ def main():
             EPOCH_PATH,
         )
 
+        print(f"I am going to start validation of epoch: {epoch}")
         total_validation_loss = 0.0
         for cur_validation_iter, validation_data in enumerate(validation_loader):
+            print(f"In iteration: {cur_validation_iter} and epoch: {epoch} of validation loader")
             validation_inputs, validation_labels = validation_data
             validation_inputs = validation_inputs.to(device)
             validation_labels = validation_labels.to(device)
@@ -166,6 +171,7 @@ def main():
             if earlystopping.early_stop:
                 print("Early stopping")
                 break
+        print(f"I reached the end of validation in epoch {epoch}")
 
 
 if __name__ == "__main__":
