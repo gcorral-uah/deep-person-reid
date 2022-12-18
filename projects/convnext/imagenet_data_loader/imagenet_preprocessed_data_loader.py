@@ -68,7 +68,8 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str, int]]):
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=sampler_train is None,
+        # shuffle=sampler_train is None,
+        shuffle=False,
         num_workers=num_workers,
         # pin_memory=True,
         pin_memory=False,
@@ -135,7 +136,8 @@ def create_imagenet_1k_data_loaders(args: Dict[str, Union[str, int]]):
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=sampler_train is None,
+        # shuffle=sampler_train is None,
+        shuffle=False,
         num_workers=num_workers,
         # pin_memory=True,
         pin_memory=False,
