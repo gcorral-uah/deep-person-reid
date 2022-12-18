@@ -18,10 +18,14 @@ if DEBUG:
     # Requires psutil loguru nvidia-ml-py3
     from loguru import logger
     import os
+    import sys
     import psutil
     import atexit
     import nvidia_smi
 
+    # Remove the stdout logging and only log to a file. The pre-configured
+    # handler is guaranteed to have the index 0.
+    logger.remove(0)
     logger.add("file_{time}.log")
 
     nvidia_smi.nvmlInit()
