@@ -32,7 +32,7 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str, int]]):
         batch_size is not None and isinstance(batch_size, int) and batch_size > 0
     ), "Invalid batch_size"
     assert (
-        num_workers is not None and isinstance(num_workers, int) and num_workers > 0
+        num_workers is not None and isinstance(num_workers, int) and num_workers >= 0
     ), "Invalid num_workers"
     assert (
         image_height is not None and isinstance(image_height, int) and image_height > 0
@@ -103,7 +103,7 @@ def create_imagenet_1k_data_loaders(args: Dict[str, Union[str, int]]):
         batch_size is not None and isinstance(batch_size, int) and batch_size > 0
     ), "Invalid batch_size"
     assert (
-        num_workers is not None and isinstance(num_workers, int) and num_workers > 0
+        num_workers is not None and isinstance(num_workers, int) and num_workers >= 0
     ), "Invalid num_workers"
     assert (
         image_height is not None and isinstance(image_height, int) and image_height > 0
