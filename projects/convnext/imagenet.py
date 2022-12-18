@@ -32,14 +32,14 @@ def main():
 
     imagenet_1k_loader_args = {
         # Path to the data (with files ILSVRC2012_devkit_t12.tar.gz,
-                            # ILSVRC2012_img_train.tar and
-                            # ILSVRC2012_img_val.tar )
+        # ILSVRC2012_img_train.tar and
+        # ILSVRC2012_img_val.tar )
         "data_path": "/data1/gonzalo.corral/ILSVRC2012/",
         "image_height": 224,
         "image_width": 224,
         "batch_size": 64,
         # How many subprocess to use to load the data (0 load in main process).
-        "num_workers": 2,
+        "num_workers": 0,
     }
     train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
         imagenet_1k_loader_args
