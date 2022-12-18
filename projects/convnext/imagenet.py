@@ -15,6 +15,7 @@ import imagenet_data_loader.early_stopping as early_stopping
 
 ## Note: This imports are for debugging.
 if DEBUG:
+    # Requires psutil loguru nvidia-ml-py3
     from loguru import logger
     import os
     import psutil
