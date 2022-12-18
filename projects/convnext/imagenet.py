@@ -26,7 +26,11 @@ if DEBUG:
     # Remove the stdout logging and only log to a file. The pre-configured
     # handler is guaranteed to have the index 0.
     logger.remove(0)
-    logger.add("file_{time}.log")
+
+    # If there is already an existing file with the same name that the file to
+    # be created, then the existing file is renamed by appending the date to
+    # its basename to prevent file overwriting.
+    logger.add("imagenet_training.log")
 
     nvidia_smi.nvmlInit()
     atexit.register(nvidia_smi.nvmlShutdown)
@@ -47,7 +51,7 @@ if DEBUG:
     def disk_use(path):
         disk_usage = psutil.disk_usage(path)
         free_space = disk_usage.free
-        percent_used = disk_usage.used
+        percent_used = disk_usage.percent
         mes = f"The disk that contains {path} has {free_space} free_space and is {percent_used}% full\n"
         return mes
 
