@@ -13,7 +13,7 @@ import glob
 import re
 import imagenet_data_loader.early_stopping as early_stopping
 
-## Note: This imports are for debuggin purpose only.
+## Note: This imports are for debugging.
 if DEBUG:
     from loguru import logger
     import psutil
@@ -79,7 +79,7 @@ if DEBUG:
 
     def cpu_use_detailed_blocking_for_1sec():
         """Update and/or return the per CPU list using the psutil library."""
-        # The first value is bogus, as it meassures the cpu activity since the last call.
+        # Carefull this may sleep for one second. I think this has too much overhead.
         percpu_percent = []
         for cpu_number, cputimes in enumerate(
             psutil.cpu_times_percent(interval=1.0, percpu=True)
