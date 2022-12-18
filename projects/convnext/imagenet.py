@@ -178,8 +178,13 @@ def main():
             # to stop.
             earlystopping(avg_validation_loss, convnext_model)
             if earlystopping.early_stop:
-                print("Early stopping")
+
+                print(f"Early stopping in epoch {epoch}")
+                # This only breaks out of validaton_loader. We also need to break from the main loop.
                 break
+        if earlystopping.early_stop:
+            # Break of main loop if early stopping, as we don't want to continue with main loop.
+            break
         print(f"I reached the end of validation in epoch {epoch}")
 
 
