@@ -203,7 +203,8 @@ def main():
         "image_width": 224,
         "batch_size": 64,
         # How many subprocess to use to load the data (0 load in main process).
-        "num_workers": 0,
+        # The optimum is 4*num_gpus. This __leaks__ memory iff >0.
+        "num_workers": 4,
     }
 
     train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
