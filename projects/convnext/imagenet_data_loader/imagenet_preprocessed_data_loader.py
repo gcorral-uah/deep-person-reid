@@ -70,7 +70,8 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str, int]]):
         batch_size=batch_size,
         shuffle=sampler_train is None,
         num_workers=num_workers,
-        pin_memory=True,
+        # pin_memory=True,
+        pin_memory=False,
         sampler=sampler_train,
         drop_last=True,
     )
@@ -136,7 +137,8 @@ def create_imagenet_1k_data_loaders(args: Dict[str, Union[str, int]]):
         batch_size=batch_size,
         shuffle=sampler_train is None,
         num_workers=num_workers,
-        pin_memory=True,
+        # pin_memory=True,
+        pin_memory=False,
         sampler=sampler_train,
     )
 
