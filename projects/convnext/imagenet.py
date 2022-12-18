@@ -16,6 +16,7 @@ import imagenet_data_loader.early_stopping as early_stopping
 ## Note: This imports are for debugging.
 if DEBUG:
     from loguru import logger
+    import os
     import psutil
     import atexit
     import nvidia_smi
@@ -185,9 +186,13 @@ def main():
         # How many subprocess to use to load the data (0 load in main process).
         "num_workers": 0,
     }
+
     train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
         imagenet_1k_loader_args
     )
+
+    # imagenet_loader_args = imagenet_22k_loader_args
+    imagenet_loader_args = imagenet_1k_loader_args
 
     train_loader, validation_loader = train_loader_1k, validation_loader_1k
 
@@ -276,6 +281,8 @@ def main():
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
                 logger.debug(gpu_use())
+                logger.debug("Current disk:" + disk_use(os.getcwd()))
+                logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
             data_inputs, data_labels = training_data
 
@@ -309,6 +316,8 @@ def main():
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
                 logger.debug(gpu_use())
+                logger.debug("Current disk:" + disk_use(os.getcwd()))
+                logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
         print(f"I reached the end of training in epoch {epoch}")
         convnext_model.train(False)
@@ -337,6 +346,8 @@ def main():
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
                 logger.debug(gpu_use())
+                logger.debug("Current disk:" + disk_use(os.getcwd()))
+                logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
             validation_inputs, validation_labels = validation_data
             validation_inputs = validation_inputs.to(device)
@@ -366,6 +377,10 @@ def main():
                     logger.debug(cpu_use())
                     logger.debug(memory_use())
                     logger.debug(gpu_use())
+                    logger.debug("Current disk:" + disk_use(os.getcwd()))
+                    logger.debug(
+                        "Data disk:" + disk_use(imagenet_loader_args["data_path"])
+                    )
 
                 print(f"Early stopping in epoch {epoch}")
                 # This only breaks out of validaton_loader. We also need to break from the main loop.
@@ -378,6 +393,8 @@ def main():
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
                 logger.debug(gpu_use())
+                logger.debug("Current disk:" + disk_use(os.getcwd()))
+                logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
         if earlystopping.early_stop:
             # Break of main loop if early stopping, as we don't want to continue with main loop.
