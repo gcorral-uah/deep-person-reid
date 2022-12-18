@@ -12,11 +12,15 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageOps, ImageDraw
 
 
-def imagenet_data():
+def imagenet_data_22k():
     return {"num_training_classes": 10450, "num_test_classes": 10450}
 
 
-def create_imagenet_22k_data_loaders(args: Dict[str, Union[str,int]]):
+def imagenet_data_1k():
+    return {"num_training_classes": 1000, "num_test_classes": 1000}
+
+
+def create_imagenet_22k_data_loaders(args: Dict[str, Union[str, int]]):
     data_path = args.get("data_path")
     batch_size = args.get("batch_size")
     num_workers = args.get("num_workers")
@@ -68,7 +72,7 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str,int]]):
         num_workers=num_workers,
         pin_memory=True,
         sampler=sampler_train,
-        drop_last=True
+        drop_last=True,
     )
 
     sampler_val = None
@@ -79,7 +83,7 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str,int]]):
         num_workers=num_workers,
         pin_memory=False,
         sampler=sampler_val,
-        drop_last=True
+        drop_last=True,
     )
 
     # train_loader = PrefetchLoader(train_loader)
@@ -87,7 +91,7 @@ def create_imagenet_22k_data_loaders(args: Dict[str, Union[str,int]]):
     return train_loader, val_loader
 
 
-def create_imagenet_1k_data_loaders(args: Dict[str, Union[str,int]]):
+def create_imagenet_1k_data_loaders(args: Dict[str, Union[str, int]]):
     data_path = args.get("data_path")
     batch_size = args.get("batch_size")
     num_workers = args.get("num_workers")

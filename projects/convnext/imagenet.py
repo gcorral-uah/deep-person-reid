@@ -48,10 +48,19 @@ def main():
     train_loader, validation_loader = train_loader_1k, validation_loader_1k
 
     print("Building model: {}")
-    convnext_config = {
-        "num_classes": imagenet.imagenet_data().get("num_training_classes", 10450),
+    convnext_config_22k = {
+        "num_classes": imagenet.imagenet_data_22k().get("num_training_classes", 10450),
         "pretrained": False,
     }
+
+    convnext_config_1k = {
+        "num_classes": imagenet.imagenet_data_1k().get("num_training_classes", 1000),
+        "pretrained": False,
+    }
+
+    # convnext_config = convnext_config_22k
+    convnext_config = convnext_config_1k
+
     convnext_model = build_convnext_osnet(**convnext_config)
     convnext_model.to(device)
     loss_function = torch.nn.CrossEntropyLoss()
