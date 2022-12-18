@@ -284,6 +284,7 @@ def main():
             )
 
             if DEBUG:
+                logger.debug("##START OF TRAINING ITERATION. \n\n\n ")
                 logger.debug(
                     f"Entering iteration: {cur_train_iter} and epoch: {epoch} of training loader\n"
                 )
@@ -327,6 +328,7 @@ def main():
                 logger.debug(gpu_use())
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
+                logger.debug("##STOP OF TRAINING ITERATION. \n\n\n ")
 
         print(f"I reached the end of training in epoch {epoch}")
         convnext_model.train(False)
@@ -349,6 +351,7 @@ def main():
                 f"In iteration: {cur_validation_iter} and epoch: {epoch} of validation loader"
             )
             if DEBUG:
+                logger.debug("##START OF VALIDATION ITERATION. \n\n\n ")
                 logger.debug(
                     f"Entering iteration: {cur_validation_iter} and epoch: {epoch} of validation loader\n"
                 )
@@ -404,13 +407,23 @@ def main():
                 logger.debug(gpu_use())
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
+                logger.debug("##STOP OF VALIDATION ITERATION. \n\n\n ")
 
         if earlystopping.early_stop:
             # Break of main loop if early stopping, as we don't want to continue with main loop.
             break
 
+        if DEBUG:
+            logger.debug(f"Finished epoch {epoch}")
+            logger.debug(cpu_use())
+            logger.debug(memory_use())
+            logger.debug(gpu_use())
+            logger.debug("Current disk:" + disk_use(os.getcwd()))
+            logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
+
         print(f"I reached the end of validation in epoch {epoch}")
-        print(f"I have finished training")
+
+    print(f"I have finished training")
 
 
 if __name__ == "__main__":
