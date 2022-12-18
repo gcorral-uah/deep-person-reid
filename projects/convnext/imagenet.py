@@ -24,7 +24,7 @@ if DEBUG:
     logger.add("file_{time}.log")
 
     nvidia_smi.nvmlInit()
-    atexit.register(nvidia_smi.nvmlShutdown())
+    atexit.register(nvidia_smi.nvmlShutdown)
 
     def memory_use():
         mem = psutil.virtual_memory()
