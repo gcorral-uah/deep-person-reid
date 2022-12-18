@@ -142,14 +142,14 @@ if DEBUG:
     def cpu_use():
         return cpu_use_nonblocking()
 
-    def gpu_use():
+    def gpu_use(used_device):
         if torch.cuda.is_available():
             deviceCount = nvidia_smi.nvmlDeviceGetCount()
             gpu_usage = []
             for i in range(deviceCount):
                 handle = nvidia_smi.nvmlDeviceGetHandleByIndex(i)
                 info = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
-                usage = "Device {}: {}, Memory : ({:.2f}% free): {}(total), {} (free), {} (used) \n".format(
+                usage = "Device {}: {}, Memory : ({:.2f}% free): {} (total), {} (free), {} (used) \n".format(
                     i,
                     nvidia_smi.nvmlDeviceGetName(handle),
                     100 * info.free / info.total,
@@ -158,9 +158,19 @@ if DEBUG:
                     info.used,
                 )
                 gpu_usage.append(usage)
+
+            current_handle = nvidia_smi.nvmlDeviceGetHandleByIndex(used_device)
+            current_info = nvidia_smi.nvmlDeviceGetMemoryInfo(current_handle)
+            current_usage = "The GPU used is {} {}: {}, Memory : ({:.2f}% free)\n".format(
+                used_device,
+                nvidia_smi.nvmlDeviceGetName(current_handle),
+                100 * current_info.free / current_info.total,
+            )
+            gpu_usage.append(current_usage)
+
             return "".join(gpu_usage)
         else:
-            return "No GPU avalible."
+            return "No NVIDIA GPU avalible, using CPU."
 
 
 def main():
@@ -290,7 +300,7 @@ def main():
                 )
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
-                logger.debug(gpu_use())
+                logger.debug(gpu_use(device.index))
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
@@ -325,7 +335,7 @@ def main():
                 )
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
-                logger.debug(gpu_use())
+                logger.debug(gpu_use(device.index))
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
                 logger.debug("##STOP OF TRAINING ITERATION. \n\n\n ")
@@ -357,7 +367,7 @@ def main():
                 )
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
-                logger.debug(gpu_use())
+                logger.debug(gpu_use(device.index))
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
@@ -388,7 +398,7 @@ def main():
                     logger.debug(f"Early stopping in epoch {epoch}\n")
                     logger.debug(cpu_use())
                     logger.debug(memory_use())
-                    logger.debug(gpu_use())
+                    logger.debug(gpu_use(device.index))
                     logger.debug("Current disk:" + disk_use(os.getcwd()))
                     logger.debug(
                         "Data disk:" + disk_use(imagenet_loader_args["data_path"])
@@ -404,7 +414,7 @@ def main():
                 )
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
-                logger.debug(gpu_use())
+                logger.debug(gpu_use(device.index))
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
                 logger.debug("##STOP OF VALIDATION ITERATION. \n\n\n ")
@@ -417,7 +427,7 @@ def main():
             logger.debug(f"Finished epoch {epoch}")
             logger.debug(cpu_use())
             logger.debug(memory_use())
-            logger.debug(gpu_use())
+            logger.debug(gpu_use(device.index))
             logger.debug("Current disk:" + disk_use(os.getcwd()))
             logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
