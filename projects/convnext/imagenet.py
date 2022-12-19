@@ -37,10 +37,10 @@ if DEBUG:
 
     def memory_use():
         mem = psutil.virtual_memory()
-        swap = psutil.virtual_memory()
+        swap = psutil.swap_memory()
         available_memory = mem.available
         used_memory_percent = mem.percent
-        available_swap = swap.available
+        available_swap = swap.free
         used_swap_percent = swap.percent
         mes = (
             f"The system has {available_memory} free memory (used {used_memory_percent}%),"
