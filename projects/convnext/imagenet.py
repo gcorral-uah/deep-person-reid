@@ -194,7 +194,7 @@ def main():
         "image_width": 224,
         "batch_size": 32,
         # How many subprocess to use to load the data (0 load in main process).
-        "num_workers": 8,
+        "num_workers": 1,
     }
     # train_loader_22k, validation_loader_22k = imagenet.create_imagenet_22k_data_loaders(
     #     imagenet_22k_loader_args
@@ -207,10 +207,10 @@ def main():
         "data_path": "/data1/gonzalo.corral/ILSVRC2012/",
         "image_height": 224,
         "image_width": 224,
-        "batch_size": 64,
+        "batch_size": 32,
         # How many subprocess to use to load the data (0 load in main process).
         # The optimum is 4*num_gpus. This __leaks__ memory iff >0.
-        "num_workers": 0,
+        "num_workers": 1,
     }
 
     train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
