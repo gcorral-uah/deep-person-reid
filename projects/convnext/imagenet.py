@@ -362,82 +362,84 @@ def main():
             EPOCH_PATH,
         )
 
-        print(f"I am going to start validation of epoch: {epoch}")
-        total_validation_loss = 0.0
-        for cur_validation_iter, validation_data in enumerate(validation_loader):
-            print(
-                f"In iteration: {cur_validation_iter} and epoch: {epoch} of validation loader"
-            )
-            if DEBUG:
-                logger.debug("##START OF VALIDATION ITERATION. \n\n\n ")
-                logger.debug(
-                    f"Entering iteration: {cur_validation_iter} and epoch: {epoch} of validation loader\n"
         # Try to free gpu_memory
         gc.collect()
         torch.cuda.empty_cache()
+
+        with torch.no_grad():
+            print(f"I am going to start validation of epoch: {epoch}")
+            total_validation_loss = 0.0
+            for cur_validation_iter, validation_data in enumerate(validation_loader):
+                print(
+                    f"In iteration: {cur_validation_iter} and epoch: {epoch} of validation loader"
                 )
+                if DEBUG:
+                    logger.debug("##START OF VALIDATION ITERATION. \n\n\n ")
+                    logger.debug(
+                        f"Entering iteration: {cur_validation_iter} and epoch: {epoch} of validation loader\n"
+                    )
+                    logger.debug(cpu_use())
+                    logger.debug(memory_use())
+                    logger.debug(gpu_use())
+                    logger.debug("Current disk:" + disk_use(os.getcwd()))
+                    logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
+
+                validation_inputs, validation_labels = validation_data
+                validation_inputs = validation_inputs.to(device)
+                validation_labels = validation_labels.to(device)
+                validation_outputs = convnext_model(validation_inputs)
+                validation_loss = loss_function(validation_outputs, validation_labels)
+                total_validation_loss += validation_loss
+
+                avg_validation_loss = total_validation_loss / (cur_validation_iter + 1)
+                print(f"Validation loss = {avg_validation_loss}")
+
+
+                if DEBUG:
+                    logger.debug(
+                        f"Exiting iteration: {cur_validation_iter} and epoch: {epoch} of validation loader\n"
+                    )
+                    logger.debug(cpu_use())
+                    logger.debug(memory_use())
+                    logger.debug(gpu_use())
+                    logger.debug("Current disk:" + disk_use(os.getcwd()))
+                    logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
+                    logger.debug("##STOP OF VALIDATION ITERATION. \n\n\n ")
+
+            # Track best performance, and save the model's state
+            if total_validation_loss < best_validation_loss:
+                best_validation_loss = total_validation_loss
+                # Save the final model
+                torch.save(convnext_model.state_dict(), MODEL_PATH)
+            print(f"I reached the end of validation in epoch {epoch}")
+
+            # early_stopping needs the validation loss to check if it has
+            # decresed, and if it has, it will make a checkpoint of the current
+            # model. If the best validation value hasn't improved in some time
+            # it sets the early_stop instance variable, so we know that we need
+            # to stop.
+            earlystopping(total_validation_loss, convnext_model)
+            if earlystopping.early_stop:
+                if DEBUG:
+                    logger.debug(f"Early stopping in epoch {epoch}\n")
+                    logger.debug(cpu_use())
+                    logger.debug(memory_use())
+                    logger.debug(gpu_use())
+                    logger.debug("Current disk:" + disk_use(os.getcwd()))
+                    logger.debug(
+                        "Data disk:" + disk_use(imagenet_loader_args["data_path"])
+                    )
+
+                print(f"Early stopping in epoch {epoch}")
+                break
+
+            if DEBUG:
+                logger.debug(f"Finished epoch {epoch}")
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
                 logger.debug(gpu_use())
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
-
-            validation_inputs, validation_labels = validation_data
-            validation_inputs = validation_inputs.to(device)
-            validation_labels = validation_labels.to(device)
-            validation_outputs = convnext_model(validation_inputs)
-            validation_loss = loss_function(validation_outputs, validation_labels)
-            total_validation_loss += validation_loss
-
-            avg_validation_loss = total_validation_loss / (cur_validation_iter + 1)
-            print(f"Validation loss = {avg_validation_loss}")
-
-
-            if DEBUG:
-                logger.debug(
-                    f"Exiting iteration: {cur_validation_iter} and epoch: {epoch} of validation loader\n"
-                )
-                logger.debug(cpu_use())
-                logger.debug(memory_use())
-                logger.debug(gpu_use())
-                logger.debug("Current disk:" + disk_use(os.getcwd()))
-                logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
-                logger.debug("##STOP OF VALIDATION ITERATION. \n\n\n ")
-
-        # Track best performance, and save the model's state
-        if total_validation_loss < best_validation_loss:
-            best_validation_loss = total_validation_loss
-            # Save the final model
-            torch.save(convnext_model.state_dict(), MODEL_PATH)
-        print(f"I reached the end of validation in epoch {epoch}")
-
-        # early_stopping needs the validation loss to check if it has
-        # decresed, and if it has, it will make a checkpoint of the current
-        # model. If the best validation value hasn't improved in some time
-        # it sets the early_stop instance variable, so we know that we need
-        # to stop.
-        earlystopping(total_validation_loss, convnext_model)
-        if earlystopping.early_stop:
-            if DEBUG:
-                logger.debug(f"Early stopping in epoch {epoch}\n")
-                logger.debug(cpu_use())
-                logger.debug(memory_use())
-                logger.debug(gpu_use())
-                logger.debug("Current disk:" + disk_use(os.getcwd()))
-                logger.debug(
-                    "Data disk:" + disk_use(imagenet_loader_args["data_path"])
-                )
-
-            print(f"Early stopping in epoch {epoch}")
-            break
-
-        if DEBUG:
-            logger.debug(f"Finished epoch {epoch}")
-            logger.debug(cpu_use())
-            logger.debug(memory_use())
-            logger.debug(gpu_use())
-            logger.debug("Current disk:" + disk_use(os.getcwd()))
-            logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
 
     print(f"I have finished training")
