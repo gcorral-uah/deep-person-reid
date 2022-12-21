@@ -383,7 +383,9 @@ def main():
                     logger.debug(memory_use())
                     logger.debug(gpu_use())
                     logger.debug("Current disk:" + disk_use(os.getcwd()))
-                    logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
+                    logger.debug(
+                        "Data disk:" + disk_use(imagenet_loader_args["data_path"])
+                    )
 
                 validation_inputs, validation_labels = validation_data
                 validation_inputs = validation_inputs.to(device)
@@ -395,7 +397,6 @@ def main():
                 avg_validation_loss = total_validation_loss / (cur_validation_iter + 1)
                 print(f"Validation loss = {avg_validation_loss}")
 
-
                 if DEBUG:
                     logger.debug(
                         f"Exiting iteration: {cur_validation_iter} and epoch: {epoch} of validation loader\n"
@@ -404,7 +405,9 @@ def main():
                     logger.debug(memory_use())
                     logger.debug(gpu_use())
                     logger.debug("Current disk:" + disk_use(os.getcwd()))
-                    logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
+                    logger.debug(
+                        "Data disk:" + disk_use(imagenet_loader_args["data_path"])
+                    )
                     logger.debug("##STOP OF VALIDATION ITERATION. \n\n\n ")
 
             # Track best performance, and save the model's state
@@ -442,6 +445,9 @@ def main():
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
+        # Try to free gpu_memory
+        gc.collect()
+        torch.cuda.empty_cache()
 
     print(f"I have finished training")
 
