@@ -388,32 +388,6 @@ def main():
             avg_validation_loss = total_validation_loss / (cur_validation_iter + 1)
             print(f"Validation loss = {avg_validation_loss}")
 
-            # Track best performance, and save the model's state
-            if avg_validation_loss < best_validation_loss:
-                best_validation_loss = avg_validation_loss
-                # Save the final model
-                torch.save(convnext_model.state_dict(), MODEL_PATH)
-
-            # early_stopping needs the validation loss to check if it has
-            # decresed, and if it has, it will make a checkpoint of the current
-            # model. If the best validation value hasn't improved in some time
-            # it sets the early_stop instance variable, so we know that we need
-            # to stop.
-            earlystopping(avg_validation_loss, convnext_model)
-            if earlystopping.early_stop:
-                if DEBUG:
-                    logger.debug(f"Early stopping in epoch {epoch}\n")
-                    logger.debug(cpu_use())
-                    logger.debug(memory_use())
-                    logger.debug(gpu_use())
-                    logger.debug("Current disk:" + disk_use(os.getcwd()))
-                    logger.debug(
-                        "Data disk:" + disk_use(imagenet_loader_args["data_path"])
-                    )
-
-                print(f"Early stopping in epoch {epoch}")
-                # This only breaks out of validaton_loader. We also need to break from the main loop.
-                break
 
             if DEBUG:
                 logger.debug(
@@ -426,8 +400,31 @@ def main():
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
                 logger.debug("##STOP OF VALIDATION ITERATION. \n\n\n ")
 
+        # Track best performance, and save the model's state
+        if total_validation_loss < best_validation_loss:
+            best_validation_loss = total_validation_loss
+            # Save the final model
+            torch.save(convnext_model.state_dict(), MODEL_PATH)
+        print(f"I reached the end of validation in epoch {epoch}")
+
+        # early_stopping needs the validation loss to check if it has
+        # decresed, and if it has, it will make a checkpoint of the current
+        # model. If the best validation value hasn't improved in some time
+        # it sets the early_stop instance variable, so we know that we need
+        # to stop.
+        earlystopping(total_validation_loss, convnext_model)
         if earlystopping.early_stop:
-            # Break of main loop if early stopping, as we don't want to continue with main loop.
+            if DEBUG:
+                logger.debug(f"Early stopping in epoch {epoch}\n")
+                logger.debug(cpu_use())
+                logger.debug(memory_use())
+                logger.debug(gpu_use())
+                logger.debug("Current disk:" + disk_use(os.getcwd()))
+                logger.debug(
+                    "Data disk:" + disk_use(imagenet_loader_args["data_path"])
+                )
+
+            print(f"Early stopping in epoch {epoch}")
             break
 
         if DEBUG:
@@ -438,7 +435,6 @@ def main():
             logger.debug("Current disk:" + disk_use(os.getcwd()))
             logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
-        print(f"I reached the end of validation in epoch {epoch}")
 
     print(f"I have finished training")
 
