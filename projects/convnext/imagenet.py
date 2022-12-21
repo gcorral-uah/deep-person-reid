@@ -12,6 +12,7 @@ from tqdm import tqdm
 import glob
 import re
 import imagenet_data_loader.early_stopping as early_stopping
+import gc
 
 ## Note: This imports are for debugging.
 if DEBUG:
@@ -371,6 +372,9 @@ def main():
                 logger.debug("##START OF VALIDATION ITERATION. \n\n\n ")
                 logger.debug(
                     f"Entering iteration: {cur_validation_iter} and epoch: {epoch} of validation loader\n"
+        # Try to free gpu_memory
+        gc.collect()
+        torch.cuda.empty_cache()
                 )
                 logger.debug(cpu_use())
                 logger.debug(memory_use())
