@@ -257,10 +257,11 @@ def main():
     training_epochs = glob.glob(TRAINING_EPOCH_PATH_GLOB)
     if len(training_epochs) > 0:
         training_epochs.sort(
-            key=lambda name: [int(s) for s in re.findall(r"\b\d+\b", name)][0],
+            key=lambda name: [int(s) for s in re.findall(r"\d+", name)][0],
             reverse=True,
         )
         latest_epoch = training_epochs[0]
+        print(f"Using saved epoch {latest_epoch}")
 
     if DEBUG and latest_epoch is not None:
         logger.debug(f"Loading epoch: {latest_epoch}\n")
