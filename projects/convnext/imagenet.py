@@ -69,14 +69,14 @@ def main():
         "num_workers": 1,
     }
 
-    train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
-        imagenet_1k_loader_args
-    )
+    # train_loader_1k, validation_loader_1k = imagenet.create_imagenet_1k_data_loaders(
+    #     imagenet_1k_loader_args
+    # )
 
     # imagenet_loader_args = imagenet_22k_loader_args
     imagenet_loader_args = imagenet_1k_loader_args
 
-    train_loader, validation_loader = train_loader_1k, validation_loader_1k
+    # train_loader, validation_loader = train_loader_1k, validation_loader_1k
 
     if DEBUG:
         assert logger is not None
@@ -151,8 +151,14 @@ def main():
         EPOCH_PATH = f"convnext_imagenet_epoch_{epoch}.pth"
         # Make sure gradient tracking is on, and do a pass over the data
         convnext_model.train(True)
+
+        (
+            train_loader_1k,
+            validation_loader_1k,
+        ) = imagenet.create_imagenet_1k_data_loaders(imagenet_1k_loader_args)
+
         total_training_loss = training_loop(
-            train_loader=train_loader,
+            train_loader=train_loader_1k,
             current_epoch=epoch,
             model=convnext_model,
             optimizer=optimizer,
@@ -182,7 +188,7 @@ def main():
         with torch.no_grad():
             print(f"I am going to start validation of epoch: {epoch}")
             validation_loss = validation_loop(
-                validation_loader=validation_loader,
+                validation_loader=validation_loader_1k,
                 current_epoch=epoch,
                 model=convnext_model,
                 loss_fn=loss_function,
@@ -203,6 +209,8 @@ def main():
                 break
 
             print(f"I reached the end of validation in epoch {epoch}")
+            del train_loader_1k
+            del validation_loader_1k
             # Try to free gpu_memory
             gc.collect()
             torch.cuda.empty_cache()
