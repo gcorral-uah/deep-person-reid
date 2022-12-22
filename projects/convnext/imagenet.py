@@ -12,7 +12,7 @@ import glob
 import re
 import imagenet_data_loader.early_stopping as early_stopping
 import gc
-from projects.convnext.utils_imagnet.imaginet_loops import (
+from utils_imagnet.imaginet_loops import (
     training_loop,
     validation_loop,
     do_early_stopping,
