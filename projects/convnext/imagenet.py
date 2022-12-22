@@ -203,11 +203,11 @@ def main():
                 break
 
             print(f"I reached the end of validation in epoch {epoch}")
+            # Try to free gpu_memory
+            gc.collect()
+            torch.cuda.empty_cache()
 
         print(f"I reached the end of training in epoch {epoch}")
-        # Try to free gpu_memory
-        gc.collect()
-        torch.cuda.empty_cache()
 
     print(f"I have finished training")
 
