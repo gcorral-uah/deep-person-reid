@@ -117,6 +117,8 @@ def validation_loop(
             )
             logger.debug("##STOP OF VALIDATION ITERATION. \n\n\n ")
 
+    return total_validation_loss
+
 
 def do_validation_loop(validation_data, model, loss_fn, device):
     validation_inputs, validation_labels = validation_data
