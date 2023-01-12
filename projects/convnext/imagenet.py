@@ -316,6 +316,7 @@ def main():
                 logger.debug("Current disk:" + disk_use(os.getcwd()))
                 logger.debug("Data disk:" + disk_use(imagenet_loader_args["data_path"]))
 
+            torch.cuda.empty_cache()
             data_inputs, data_labels = training_data
 
             # Move input data to device (only strictly necessary if we use GPU)
