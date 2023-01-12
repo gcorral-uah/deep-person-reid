@@ -272,8 +272,8 @@ def main():
     if latest_epoch is not None:
         checkpoint = torch.load(latest_epoch)
         start_epoch = checkpoint["epoch"] + 1
-        convnext_model.load_state_dict(checkpoint["state_dict"])
-        optimizer.load_state_dict(checkpoint["optimizer"])
+        convnext_model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         best_validation_loss = checkpoint["best_loss"]
         convnext_model = convnext_model.to(device)
         for state in optimizer.state.values():
