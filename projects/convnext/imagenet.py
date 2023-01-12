@@ -270,16 +270,19 @@ def main():
     # Starting epoch (in case we need to restart training from a previous epoch)
     start_epoch = 0
     if latest_epoch is not None:
+        torch.cuda.empty_cache()
         checkpoint = torch.load(latest_epoch)
         start_epoch = checkpoint["epoch"] + 1
         convnext_model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         best_validation_loss = checkpoint["best_loss"]
         convnext_model = convnext_model.to(device)
+        torch.cuda.empty_cache()
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device)
+        torch.cuda.empty_cache()
 
     earlystopping = early_stopping.EarlyStopping(patience=7, verbose=True)
     # Training loop
