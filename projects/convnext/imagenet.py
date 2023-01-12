@@ -208,7 +208,7 @@ def main():
         "data_path": "/data1/gonzalo.corral/ILSVRC2012/",
         "image_height": 224,
         "image_width": 224,
-        "batch_size": 32,
+        "batch_size": 16,
         # How many subprocess to use to load the data (0 load in main process).
         # The optimum is 4*num_gpus. This __leaks__ memory iff >0.
         "num_workers": 1,
