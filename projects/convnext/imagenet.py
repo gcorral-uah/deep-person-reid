@@ -13,6 +13,7 @@ import glob
 import re
 import imagenet_data_loader.early_stopping as early_stopping
 import gc
+from pathlib import Path
 
 ## Note: This imports are for debugging.
 if DEBUG:
@@ -181,6 +182,9 @@ if DEBUG:
 
 
 def main():
+    finished_file = Path('finished.txt')
+    finished_file.rename("old_finished.txt")
+
     NUM_EPOCHS = 140
     MODEL_PATH = "convnext_imagenet.pth"
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -454,6 +458,7 @@ def main():
         torch.cuda.empty_cache()
 
     print(f"I have finished training")
+    finished_file.touch(exist_ok=True)
 
 
 if __name__ == "__main__":
