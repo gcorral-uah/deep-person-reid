@@ -11,7 +11,10 @@ while true; do
         rm "nohup.out"
     fi
     # conda run -n imagenet-training nohup python imagenet.py
-    nohup conda run -n imagenet-training python imagenet.py
+    # nohup conda run -n imagenet-training python imagenet.py
+    source ~/miniconda3/etc/profile.d/conda.sh
+    conda activate imagenet-training
+    nohup python imagenet.py 2> "nohup.err"
     pid=$!
     wait $pid || continue
     break
