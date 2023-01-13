@@ -7,8 +7,7 @@ while true; do
     if [[ -e "finished.txt" ]]; then
         break
     fi
-    conda activate imagenet-training
-    nohup python imagenet.py
+    conda run -n imagenet-training nohup python imagenet.py
     pid=$!
     wait $pid || continue
     break
