@@ -182,8 +182,11 @@ if DEBUG:
 
 
 def main():
+    # This file is a placeholder for a restart script. If the file is present
+    # we are launched outside of the reload script and we need to remove to
+    # allow the script to continue
     finished_file = Path('finished.txt')
-    finished_file.rename("old_finished.txt")
+    finished_file.unlink(missing_ok=True)
 
     NUM_EPOCHS = 140
     MODEL_PATH = "convnext_imagenet.pth"
