@@ -21,7 +21,8 @@ class Market1501(ImageDataset):
     """
     _junk_pids = [0, -1]
     dataset_dir = 'market1501'
-    dataset_url = 'http://188.138.127.15:81/Datasets/Market-1501-v15.09.15.zip'
+    # dataset_url = 'http://188.138.127.15:81/Datasets/Market-1501-v15.09.15.zip'
+    dataset_url = 'https://drive.google.com/uc?id=0B8-rUzbwVRk0c054eEozWG9COHM&export=download'
 
     def __init__(self, root='', market1501_500k=False, **kwargs):
         self.root = osp.abspath(osp.expanduser(root))

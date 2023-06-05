@@ -5,6 +5,9 @@ import os.path as osp
 import tarfile
 import zipfile
 import torch
+import re
+import gdown
+import os
 
 from torchreid.utils import read_image, download_url, mkdir_if_missing
 
@@ -239,7 +242,14 @@ class Dataset(object):
                 self.__class__.__name__, dataset_dir
             )
         )
-        download_url(dataset_url, fpath)
+
+        
+        if re.match(".*drive.*", dataset_url):
+            if not os.path.exists(fpath):
+                print("Using google drive")
+                gdown.download(dataset_url, fpath)
+        else:
+            download_url(dataset_url, fpath)
 
         print('Extracting "{}"'.format(fpath))
         try:
