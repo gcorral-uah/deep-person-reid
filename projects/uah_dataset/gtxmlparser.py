@@ -4,6 +4,8 @@ import glob
 
 
 def parse_gt_xml_file(file: str) -> list[int]:
+    # Expand the ~
+    file = os.path.expanduser(file)
     identities: list[int] = []
 
     xml_doc = xml.dom.minidom.parse(file)
@@ -46,6 +48,7 @@ def parse_gt_xml_video(files: list[str]) -> Dict[int, list[str]]:
     dict_file_people: Dict[str, list[int]] = {}
 
     for file in files:
+        file = os.path.expanduser(file)
         dict_file_people[file] = parse_gt_xml_file(file)
 
     dict_people_file = build_rev_dict_gt_xml(dict_file_people)
@@ -53,5 +56,8 @@ def parse_gt_xml_video(files: list[str]) -> Dict[int, list[str]]:
     return dict_people_file
 
 def parse_gt_xml_dir(path: str) -> Dict[int, list[str]]:
+    # Expand the ~
+    path = os.path.expanduser(path)
+
     files = glob.glob(path + "*.xml")
     return parse_gt_xml_video(files)
