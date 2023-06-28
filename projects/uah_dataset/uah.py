@@ -62,7 +62,7 @@ class UAHDataset(ImageDataset):
         if osp.exists(self.split_path) and not force:
             return
 
-        paths = glob.glob(osp.join(self.data_dir, '*.jpg'))
+        paths = glob.glob(osp.join(self.dataset_dir, '*.jpg'))
         img_names = [osp.basename(path) for path in paths]
 
         # Dict, where the defult value (if the key doesn't exists is a [], and
