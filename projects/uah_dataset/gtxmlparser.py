@@ -1,6 +1,9 @@
+from collections import defaultdict
 from typing import Dict
 import xml.dom.minidom
 import glob
+import os
+import re
 
 
 def parse_gt_xml_file(file: str) -> list[int]:
@@ -61,3 +64,23 @@ def parse_gt_xml_dir(path: str) -> Dict[int, list[str]]:
 
     files = glob.glob(path + "*.xml")
     return parse_gt_xml_video(files)
+
+def parse_all_xml(folder: str) -> Dict[int, list[str]]:
+    # Expand the ~
+    folder = os.path.expanduser(folder)
+    subfolders = [ f.path for f in os.scandir(folder) if f.is_dir() ]
+    key_val_store = defaultdict(list)
+
+    for dir in subfolders:
+        print(f"Entering {dir=}")
+        # The other dir contain files that are not video, so ignore it.
+        if re.match(".*other.*", dir):
+            continue
+
+        real_dir = dir + '/' if dir[-1] != '/' else dir
+        xml_dir = real_dir + "xml"
+        local_dict = parse_gt_xml_dir(xml_dir)
+        for k,v in local_dict.items():
+            key_val_store[k].append(v)
+
+    return key_val_store
