@@ -155,3 +155,19 @@ def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str
 
     return dict_files_people_global, dict_people_files_global
 
+
+if __name__ == "__main__":
+    folder = os.path.expanduser("~/dataset/gba_dataset/")
+    if os.path.exists(folder):
+        d, rd = parse_all_xml(folder)
+        for k, v in d.items():
+            print(f"[{k}]= [")
+            for item in v:
+                print(item)
+            print("]")
+
+        for k, v in rd.items():
+            print(f"[{k}]= [")
+            for item in v:
+                print(item)
+            print("]")
