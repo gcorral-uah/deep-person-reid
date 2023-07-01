@@ -9,12 +9,14 @@ import glob
 import re
 import shutil
 
+
 def generate_frames(folder: str) -> None:
     # Expand the ~
     folder = os.path.expanduser(folder)
     command = ["bash", "generate_frames.sh"]
     dir = folder
     subprocess.run(command, cwd=dir)
+
 
 def generate_xml_using_octave(folder: str, remove_xml: bool = False) -> None:
     # Expand the ~
@@ -24,10 +26,10 @@ def generate_xml_using_octave(folder: str, remove_xml: bool = False) -> None:
 
     # Example of calling the function on octave
     # gt2xml('~/gba/2016_video003/video3.gt', '~/gba_/2016_video003/FRAMES', '~/gba/2016_video003/xml')
-    gt_file_name = glob.glob("*.gt",root_dir=folder)
+    gt_file_name = glob.glob("*.gt", root_dir=folder)
     assert len(gt_file_name) == 1
 
-    dir = folder + '/' if folder[-1] != '/' else folder
+    dir = folder + "/" if folder[-1] != "/" else folder
     gt_file = dir + gt_file_name[0]
     frames_dir = dir + "FRAMES"
     xml_dir = dir + "xml"
@@ -43,10 +45,11 @@ def generate_xml_using_octave(folder: str, remove_xml: bool = False) -> None:
     command = ["octave", "--eval", f"gt2xml('{gt_file}', '{frames_dir}', '{xml_dir}')"]
     subprocess.run(command)
 
+
 def generate_all_xml_of_dataset(folder: str) -> None:
     # Expand the ~
     folder = os.path.expanduser(folder)
-    subfolders = [ f.path for f in os.scandir(folder) if f.is_dir() ]
+    subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
 
     for dir in subfolders:
         print(f"Entering {dir=}")
@@ -109,6 +112,7 @@ def parse_gt_xml_video(files: list[str]) -> Dict[int, list[str]]:
 
     return dict_people_file
 
+
 def parse_gt_xml_dir(path: str) -> Dict[int, list[str]]:
     # Expand the ~
     path = os.path.expanduser(path)
@@ -116,10 +120,11 @@ def parse_gt_xml_dir(path: str) -> Dict[int, list[str]]:
     files = glob.glob(path + "*.xml")
     return parse_gt_xml_video(files)
 
+
 def parse_all_xml(folder: str) -> Dict[int, list[str]]:
     # Expand the ~
     folder = os.path.expanduser(folder)
-    subfolders = [ f.path for f in os.scandir(folder) if f.is_dir() ]
+    subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
     key_val_store = defaultdict(list)
 
     for dir in subfolders:
@@ -128,10 +133,10 @@ def parse_all_xml(folder: str) -> Dict[int, list[str]]:
         if re.match(".*other.*", dir):
             continue
 
-        real_dir = dir + '/' if dir[-1] != '/' else dir
+        real_dir = dir + "/" if dir[-1] != "/" else dir
         xml_dir = real_dir + "xml"
         local_dict = parse_gt_xml_dir(xml_dir)
-        for k,v in local_dict.items():
+        for k, v in local_dict.items():
             key_val_store[k].append(v)
 
     return key_val_store
