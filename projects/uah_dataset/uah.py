@@ -15,13 +15,16 @@ class UAHDataset(ImageDataset):
     dataset_url = None
 
     # NOTE: I am basing this loader in ilids.py
-    def __init__(self, root="", **kwargs):
+    def __init__(
+        self: Self, root: str = "", training_test_split: float = 0.5, **kwargs
+    ):
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
         self.download_dataset(self.dataset_dir, self.dataset_url)
 
         self.split_path = osp.join(self.dataset_dir, "splits.json")
         self.prepare_dataset(self.dataset_dir)
+        self.training_test_split = training_test_split
 
         # All you need to do here is to generate three lists,
         # which are train, query and gallery.
@@ -77,7 +80,7 @@ class UAHDataset(ImageDataset):
 
         pids = list(pid_dict.keys())
         num_pids = len(pids)
-        num_train_pids = int(num_pids * 0.5)
+        num_train_pids = int(num_pids * self.training_test_split)
         pids_copy = copy.deepcopy(pids)
         random.shuffle(pids_copy)
         train_pids = pids_copy[:num_train_pids]
