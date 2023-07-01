@@ -10,12 +10,26 @@ import re
 import shutil
 
 
-def generate_frames(folder: str) -> None:
+def generate_frames(
+    folder: str, recreate_frames=False, delete_xml=False, delete_frames=False
+) -> None:
     # Expand the ~
     folder = os.path.expanduser(folder)
     command = ["bash", "generate_frames.sh"]
     dir = folder
+
+    if delete_xml:
+        assert recreate_frames is False and delete_frames is False
+        command.append("-x")
+    elif recreate_frames:
+        assert delete_frames is False
+        command.append("-r")
+    elif delete_frames:
+        command.append("-d")
+
+    print(f"Starting to run {dir}generate_frames.sh")
     subprocess.run(command, cwd=dir)
+    print(f"Finished running {dir}generate_frames.sh")
 
 
 def generate_xml_using_octave(folder: str, remove_xml: bool = False) -> None:
