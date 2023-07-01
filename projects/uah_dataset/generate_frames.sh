@@ -17,14 +17,12 @@ usage() {
 delete="no"
 recreate="no"
 delete_xml="no"
-while getopts ":drh" flag; do
+while getopts ":drxh" flag; do
     case "${flag}" in
         d) delete="yes";;
         r) recreate="yes";;
         x) delete_xml="yes";;
-        h)
-            usage
-            exit 0;;
+        h) usage ;;
         \?) # Invalid option
             echo "Error: Invalid option"
             exit;;
@@ -54,7 +52,7 @@ for DIR in */; do
 
     echo "Entering $DIR"
 
-    pushd $DIR
+    pushd "$DIR"
 
     if [[ $delete_xml =~ "yes" ]]; then
         echo "Going to remove ${DIR}xml"
@@ -85,8 +83,8 @@ for DIR in */; do
     fi
 
     # Use an array to hold the glob, it's probably the best way to do it...
-    video_file=( *.MP4 )
-    echo "Globbed the video file $video_file in $DIR"
+    video_file=( ./*.MP4 )
+    echo "Globbed the video file" "${video_file[@]}" "in $DIR"
 
     if (( ${#video_file[@]} == 0 )); then
         # If there has been an error and the array is empty continue
@@ -99,7 +97,7 @@ for DIR in */; do
     mkdir FRAMES
 
     # This doen't need to be quoted, becaused we have generated the names without spaces or rare characters.
-    mv *.jpg FRAMES/
+    mv ./*.jpg FRAMES/
 
     popd
 done
