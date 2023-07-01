@@ -36,8 +36,6 @@ def generate_xml_using_octave(folder: str, remove_xml: bool = False) -> None:
     # Expand the ~
     folder = os.path.expanduser(folder)
 
-    print(f"Entering to process and generate xml on folder {folder=}")
-
     # Example of calling the function on octave
     # gt2xml('~/gba/2016_video003/video3.gt', '~/gba_/2016_video003/FRAMES', '~/gba/2016_video003/xml')
     gt_file_name = glob.glob("*.gt", root_dir=folder)
@@ -66,10 +64,10 @@ def generate_all_xml_of_dataset(folder: str) -> None:
     subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
 
     for dir in subfolders:
-        print(f"Entering {dir=}")
         # The other dir contain files that are not video, so ignore it.
         if re.match(".*other.*", dir):
             continue
+        print(f"Entering {dir=} to generate_xml_of_dataset")
 
         generate_xml_using_octave(dir)
 
@@ -154,7 +152,7 @@ def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str
         if re.match(".*other.*", dir):
             continue
 
-        print(f"Entering {dir=}")
+        print(f"Entering {dir=} to parse xml")
 
         real_dir = dir + "/" if dir[-1] != "/" else dir
         xml_dir = real_dir + "xml"
