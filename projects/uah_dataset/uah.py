@@ -7,10 +7,11 @@ import collections
 import glob
 
 from torchreid.data import ImageDataset
+from gtxmlparser import parse_all_xml, generate_frames, generate_all_xml_of_dataset
 
 
 class UAHDataset(ImageDataset):
-    dataset_dir = "uah_dataset"
+    dataset_dir = "gba_dataset/"
     dataset_url = None
 
     # NOTE: I am basing this loader in ilids.py
@@ -20,6 +21,7 @@ class UAHDataset(ImageDataset):
         self.download_dataset(self.dataset_dir, self.dataset_url)
 
         self.split_path = osp.join(self.dataset_dir, "splits.json")
+        self.prepare_dataset(self.dataset_dir)
 
         # All you need to do here is to generate three lists,
         # which are train, query and gallery.
@@ -108,3 +110,6 @@ class UAHDataset(ImageDataset):
 
     def gen_gallery_imgs(self):
         return [("", 0, 1)]
+    def prepare_dataset(self: Self, path: str):
+        generate_frames(path)
+        generate_all_xml_of_dataset(path)
