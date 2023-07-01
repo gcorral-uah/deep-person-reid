@@ -136,10 +136,11 @@ def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str
     dict_files_people_global: Dict[str, list[int]] = {}
 
     for dir in subfolders:
-        print(f"Entering {dir=}")
         # The other dir contain files that are not video, so ignore it.
         if re.match(".*other.*", dir):
             continue
+
+        print(f"Entering {dir=}")
 
         real_dir = dir + "/" if dir[-1] != "/" else dir
         xml_dir = real_dir + "xml"
