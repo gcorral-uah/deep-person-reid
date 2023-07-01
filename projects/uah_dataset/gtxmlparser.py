@@ -110,7 +110,7 @@ def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
     return reverse_map
 
 
-def parse_gt_xml_video(files: list[str]) -> Dict[int, list[str]]:
+def parse_gt_xml_video(files: list[str]) -> Dict[str, list[int]]:
     dict_file_people: Dict[str, list[int]] = {}
 
     for file in files:
@@ -118,24 +118,23 @@ def parse_gt_xml_video(files: list[str]) -> Dict[int, list[str]]:
         image_path, people = parse_gt_xml_file(file)
         dict_file_people[image_path] = people
 
-    dict_people_file = build_rev_dict_gt_xml(dict_file_people)
-
-    return dict_people_file
+    return dict_file_people
 
 
-def parse_gt_xml_dir(path: str) -> Dict[int, list[str]]:
+def parse_gt_xml_dir(path: str) -> Dict[str, list[int]]:
     # Expand the ~
     path = os.path.expanduser(path)
 
     files = glob.glob(path + "*.xml")
-    return parse_gt_xml_video(files)
+    dict_file_people = parse_gt_xml_video(files_loc)
+    return dict_file_people
 
 
-def parse_all_xml(folder: str) -> Dict[int, list[str]]:
+def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str]]]:
     # Expand the ~
     folder = os.path.expanduser(folder)
     subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
-    key_val_store = defaultdict(list)
+    dict_files_people_global: Dict[str, list[int]] = {}
 
     for dir in subfolders:
         print(f"Entering {dir=}")
@@ -145,8 +144,14 @@ def parse_all_xml(folder: str) -> Dict[int, list[str]]:
 
         real_dir = dir + "/" if dir[-1] != "/" else dir
         xml_dir = real_dir + "xml"
-        local_dict = parse_gt_xml_dir(xml_dir)
-        for k, v in local_dict.items():
-            key_val_store[k].append(v)
 
-    return key_val_store
+        dict_people_files_directory = parse_gt_xml_dir(xml_dir)
+        # Merge the two dicts.
+        dict_files_people_global = (
+            dict_files_people_global | dict_people_files_directory
+        )
+
+    dict_people_files_global = build_rev_dict_gt_xml(dict_files_people_global)
+
+    return dict_files_people_global, dict_people_files_global
+
