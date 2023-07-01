@@ -1,6 +1,6 @@
 from collections import defaultdict
 from os.path import exists
-from typing import Dict
+from typing import Dict, Tuple
 import xml.dom.minidom
 import glob
 import subprocess
@@ -60,7 +60,7 @@ def generate_all_xml_of_dataset(folder: str) -> None:
         generate_xml_using_octave(dir)
 
 
-def parse_gt_xml_file(file: str) -> list[int]:
+def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
     # Expand the ~
     file = os.path.expanduser(file)
     identities: list[int] = []
@@ -68,6 +68,8 @@ def parse_gt_xml_file(file: str) -> list[int]:
     xml_doc = xml.dom.minidom.parse(file)
     # There is only one annotation on every document.
     annotation = xml_doc.getElementsByTagName("annotation")[0]
+    path_tag = annotation.getElementsByTagName("path")
+    p = path_tag[0].childNodes[0].data
     objs = annotation.getElementsByTagName("object")
     for obj in objs:
         id = obj.getElementsByTagName("id")
@@ -80,7 +82,7 @@ def parse_gt_xml_file(file: str) -> list[int]:
 
         identities.append(number_id)
 
-    return identities
+    return p, identities
 
 
 def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
@@ -106,7 +108,8 @@ def parse_gt_xml_video(files: list[str]) -> Dict[int, list[str]]:
 
     for file in files:
         file = os.path.expanduser(file)
-        dict_file_people[file] = parse_gt_xml_file(file)
+        image_path, people = parse_gt_xml_file(file)
+        dict_file_people[image_path] = people
 
     dict_people_file = build_rev_dict_gt_xml(dict_file_people)
 
