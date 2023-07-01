@@ -74,7 +74,14 @@ def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
     for obj in objs:
         id = obj.getElementsByTagName("id")
         parsed_id = id[0].childNodes[0].data
-        number_id = int(parsed_id)
+
+        try:
+            number_id = int(parsed_id)
+        except ValueError:
+            # There are some id numbers that are floats, which is an error so
+            # we don't use them.
+            continue
+
         # If the number is greater than 100 there are anonymous, so we don't
         # want them.
         if number_id >= 100:
