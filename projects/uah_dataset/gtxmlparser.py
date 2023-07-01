@@ -121,7 +121,10 @@ def parse_gt_xml_dir(path: str) -> Dict[str, list[int]]:
     # Expand the ~
     path = os.path.expanduser(path)
 
-    files = glob.glob(path + "*.xml")
+    files = glob.glob("**.xml", root_dir=path)
+    p = path + "/" if path[-1] != "/" else path
+    files_loc = [p + f for f in files]
+
     dict_file_people = parse_gt_xml_video(files_loc)
     return dict_file_people
 
