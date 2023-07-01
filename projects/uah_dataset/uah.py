@@ -1,10 +1,7 @@
-import sys
-import os
 import copy
 import os.path as osp
 import random
-import collections
-import glob
+from typing import Optional, Self
 
 from torchreid.data import ImageDataset
 from gtxmlparser import parse_all_xml, generate_frames, generate_all_xml_of_dataset
@@ -21,8 +18,6 @@ class UAHDataset(ImageDataset):
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
         self.download_dataset(self.dataset_dir, self.dataset_url)
-
-        self.split_path = osp.join(self.dataset_dir, "splits.json")
         self.prepare_dataset(self.dataset_dir)
         self.training_test_split = training_test_split
 
@@ -48,36 +43,22 @@ class UAHDataset(ImageDataset):
         # that one used in the query. My workaround for single cam use is to set
         # all query cam IDs to 0 and all gallery IDs to 1.
 
-        train = self.gen_train_imgs()
-        query = self.gen_query_imgs()
-        gallery = self.gen_gallery_imgs()
+        # Call our debugging copies _train, etc as train, etc are overwritten
+        # by parent classes constructors.
+        self._train, self._query, self._gallery = self.create_splits()
+        super(UAHDataset, self).__init__(
+            self._train, self._query, self._gallery, **kwargs
+        )
 
-        super(UAHDataset, self).__init__(train, query, gallery, **kwargs)
+    def create_splits(self: Self):
+        """Create training, query and gallery splits"""
 
-    def _create_splits(self, force=False):
-        """
-        Summary or Description of the Function
+        # The basic idea here is to take divide the dataset into training and
+        # testing based on the apparence of people in images. So for example
+        # the subjects with id 1, 3 and go into the training data, and the ones
+        # with id 2 and 5 go into testing or validation folds.
 
-        Parameters:
-        force (bool): Force the regeneration of the splits.json file
-        """
-
-        # If the split already exists, and we don't want to force the
-        # regeneration, do nothing
-        if osp.exists(self.split_path) and not force:
-            return
-
-        paths = glob.glob(osp.join(self.dataset_dir, "*.jpg"))
-        img_names = [osp.basename(path) for path in paths]
-
-        # Dict, where the defult value (if the key doesn't exists is a [], and
-        # it doesn't throw a KeyNotFound exception)
-        pid_dict = collections.defaultdict(list)
-
-        for img_name in img_names:
-            pid = int(img_name[:4])
-            pid_dict[pid].append(img_name)
-
+        _, pid_dict = parse_all_xml(self.dataset_dir)
         pids = list(pid_dict.keys())
         num_pids = len(pids)
         num_train_pids = int(num_pids * self.training_test_split)
@@ -89,30 +70,34 @@ class UAHDataset(ImageDataset):
         train = []
         query = []
         gallery = []
+        camera_train = 0
+        camera_query = 0
+        camera_gallery = 1
 
         # for train IDs, all images are used in the train set.
         for pid in train_pids:
-            img_names = pid_dict[pid]
-            train.extend(img_names)
+            for image_path in pid_dict[pid]:
+                image_tuple = (image_path, pid, camera_train)
+                train.append(image_tuple)
 
         # for each test ID, randomly choose two images, one for
-        # query and the other one for gallery.
+        # query and the other one for gallery, until we have only zero or one
+        # left.
+
         for pid in test_pids:
-            img_names = pid_dict[pid]
-            samples = random.sample(img_names, 2)
-            query.append(samples[0])
-            gallery.append(samples[1])
+            img_names = set(copy.deepcopy(pid_dict[pid]))
+            while (len(img_names)) >= 2:
+                query_img = img_names.pop()
+                image_query_tuple = (query_img, pid, camera_query)
+                query.append(image_query_tuple)
 
-        split = {"train": train, "query": query, "gallery": gallery}
+                gallery_img = img_names.pop()
+                image_gallery_tuple = (gallery_img, pid, camera_gallery)
+                gallery.append(image_gallery_tuple)
 
-    def gen_train_imgs(self):
-        return [("", 0, 0)]
+        # TODO: Maybe we want to shuffle them?
+        return train, query, gallery
 
-    def gen_query_imgs(self):
-        return [("", 0, 0)]
-
-    def gen_gallery_imgs(self):
-        return [("", 0, 1)]
     def prepare_dataset(self: Self, path: str):
         generate_frames(path)
         generate_all_xml_of_dataset(path)
