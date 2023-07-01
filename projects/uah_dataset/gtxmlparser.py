@@ -93,19 +93,15 @@ def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
 
 
 def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
-    reverse_map: Dict[int, list[str]] = {}
+    reverse_map: Dict[int, list[str]] = defaultdict(list)
 
+    # NOTE: Now we are considering all the persons on the image as valid for
+    # reidentification. We may want to change it to only consider one person
+    # (only use the first value of v to append)
     for k, v in map.items():
         # The value is a list of str, so we need to iterate over it.
         for s in v:
-            # Now the string is the key of the map, but we need to initialize
-            # the array of int if it doesn't exist before appending.
-            if s in reverse_map:
-                # The key exist, we can simply append.
-                reverse_map[s].append(k)
-            else:
-                # Create a new key
-                reverse_map[s] = [k]
+            reverse_map[s].append(k)
 
     return reverse_map
 
