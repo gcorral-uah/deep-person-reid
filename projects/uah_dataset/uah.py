@@ -12,9 +12,7 @@ class UAHDataset(ImageDataset):
     dataset_url = None
 
     # NOTE: I am basing this loader in ilids.py
-    def __init__(
-        self: Self, root: str = "", training_test_split: float = 0.5, **kwargs
-    ):
+    def __init__(self, root: str = "", training_test_split: float = 0.5, **kwargs):
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
         self.download_dataset(self.dataset_dir, self.dataset_url)
@@ -50,7 +48,7 @@ class UAHDataset(ImageDataset):
             self._train, self._query, self._gallery, **kwargs
         )
 
-    def create_splits(self: Self):
+    def create_splits(self):
         """Create training, query and gallery splits"""
 
         # The basic idea here is to take divide the dataset into training and
@@ -98,6 +96,6 @@ class UAHDataset(ImageDataset):
         # TODO: Maybe we want to shuffle them?
         return train, query, gallery
 
-    def prepare_dataset(self: Self, path: str):
+    def prepare_dataset(self, path: str):
         generate_frames(path)
         generate_all_xml_of_dataset(path)
