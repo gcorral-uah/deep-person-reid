@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import torch
+from typing import Union
 
 from torchreid.data.sampler import build_train_sampler
 from torchreid.data.datasets import init_image_dataset, init_video_dataset
@@ -157,7 +158,7 @@ class ImageDataManager(DataManager):
         targets=None,
         height=256,
         width=128,
-        transforms='random_flip',
+        transforms: Union[str, list[str]] = 'random_flip',
         k_tfm=1,
         norm_mean=None,
         norm_std=None,
