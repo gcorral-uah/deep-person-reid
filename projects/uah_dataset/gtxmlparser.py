@@ -1,5 +1,4 @@
 from collections import defaultdict
-from os.path import exists
 from typing import Dict, Tuple
 import xml.dom.minidom
 import glob

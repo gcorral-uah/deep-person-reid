@@ -1,7 +1,6 @@
 import copy
 import os.path as osp
 import random
-from typing import Optional, Self
 
 from torchreid.data import ImageDataset
 from gtxmlparser import parse_all_xml, generate_frames, generate_all_xml_of_dataset
@@ -50,6 +49,10 @@ class UAHDataset(ImageDataset):
 
     def create_splits(self):
         """Create training, query and gallery splits"""
+
+        # The training-test split is a float between 0 and 1.
+        assert self.training_test_split > 0.0
+        assert self.training_test_split < 1.0
 
         # The basic idea here is to take divide the dataset into training and
         # testing based on the apparence of people in images. So for example
