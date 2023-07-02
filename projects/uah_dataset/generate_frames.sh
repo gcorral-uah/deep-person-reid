@@ -40,7 +40,6 @@ fi
 
 if [[ $delete_xml =~ "yes" ]]; then
     echo "Deleting xml. This is an exclusive operation."
-    exit
 fi
 
 
