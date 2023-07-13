@@ -4,7 +4,6 @@ import xml.dom.minidom
 import glob
 import subprocess
 import os
-import glob
 import re
 import shutil
 
@@ -36,7 +35,9 @@ def generate_xml_using_octave(folder: str, remove_xml: bool = False) -> None:
     folder = os.path.expanduser(folder)
 
     # Example of calling the function on octave
-    # gt2xml('~/gba/2016_video003/video3.gt', '~/gba_/2016_video003/FRAMES', '~/gba/2016_video003/xml')
+    # gt2xml('~/gba/2016_video003/video3.gt',
+    # '~/gba_/2016_video003/FRAMES',
+    # '~/gba/2016_video003/xml')
     gt_file_name = glob.glob("*.gt", root_dir=folder)
     assert len(gt_file_name) == 1
 
