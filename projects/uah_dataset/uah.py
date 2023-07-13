@@ -1,6 +1,7 @@
 import copy
 import os.path as osp
 import random
+from typing import Optional
 
 from torchreid.data import ImageDataset
 from gtxmlparser import parse_all_xml, generate_frames, generate_all_xml_of_dataset
@@ -12,6 +13,8 @@ class UAHDataset(ImageDataset):
 
     # NOTE: I am basing this loader in ilids.py
     def __init__(self, root: str = "", training_test_split: float = 0.5, **kwargs):
+        self.old_new_label_dict: Optional[dict[int, int]] = None
+
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
         self.download_dataset(self.dataset_dir, self.dataset_url)
@@ -68,17 +71,29 @@ class UAHDataset(ImageDataset):
         train_pids = pids_copy[:num_train_pids]
         test_pids = pids_copy[num_train_pids:]
 
-        train = []
-        query = []
-        gallery = []
+        train: list[tuple[str, int, int]] = []
+        query: list[tuple[str, int, int]] = []
+        gallery: list[tuple[str, int, int]] = []
         camera_train = 0
         camera_query = 0
         camera_gallery = 1
 
+        # The training labels should start from zero and increment by one for one-shot-encoding.
+        # We make the test labels start from the last one of the training dataset
+        # https://github.com/KaiyangZhou/deep-person-reid/issues/190#issuecomment-502843010
+        label_train_dict = {label: index for index, label in enumerate(train_pids)}
+        label_test_dict = {
+            label: index + len(train_pids) for index, label in enumerate(test_pids)
+        }
+        label_dict = label_train_dict | label_test_dict
+
+        self.old_new_label_dict = label_dict
+
         # for train IDs, all images are used in the train set.
         for pid in train_pids:
             for image_path in pid_dict[pid]:
-                image_tuple = (image_path, pid, camera_train)
+                new_label = label_dict[pid]
+                image_tuple = (image_path, new_label, camera_train)
                 train.append(image_tuple)
 
         # for each test ID, randomly choose two images, one for
@@ -88,12 +103,14 @@ class UAHDataset(ImageDataset):
         for pid in test_pids:
             img_names = set(copy.deepcopy(pid_dict[pid]))
             while (len(img_names)) >= 2:
+                new_label = label_dict[pid]
+
                 query_img = img_names.pop()
-                image_query_tuple = (query_img, pid, camera_query)
+                image_query_tuple = (query_img, new_label, camera_query)
                 query.append(image_query_tuple)
 
                 gallery_img = img_names.pop()
-                image_gallery_tuple = (gallery_img, pid, camera_gallery)
+                image_gallery_tuple = (gallery_img, new_label, camera_gallery)
                 gallery.append(image_gallery_tuple)
 
         # TODO: Maybe we want to shuffle them?
