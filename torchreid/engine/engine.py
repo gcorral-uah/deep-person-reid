@@ -160,9 +160,9 @@ class Engine(object):
                 Default is False. This is only enabled when test_only=True.
         """
 
-        if visrank and not test_only:
+        if visrank and (not test_only and eval_freq != -1):
             raise ValueError(
-                'visrank can be set to True only if test_only=True'
+                'visrank can be set to True only if test_only=True or you do not evaluate during training'
             )
 
         if test_only:
