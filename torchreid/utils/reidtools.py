@@ -3,6 +3,7 @@ import numpy as np
 import shutil
 import os.path as osp
 import cv2
+import sys
 
 from .tools import mkdir_if_missing
 
@@ -131,6 +132,13 @@ def visualize_ranked_results(
                         rank_idx+1
                     ) * width + rank_idx*GRID_SPACING + QUERY_EXTRA_SPACING
                     grid_img[:, start:end, :] = gimg
+
+                    # Print a message to stderr when we encounter an error
+                    # classifing the images (maybe restrict it to top rank?)
+                    if not matched:
+                        sys.stderr.write(
+                            f"Failed when comparing image in gallery {gimg_path=} with query {qimg_path=} with rank {rank_idx=}\n"
+                        )
                 else:
                     _cp_img_to(
                         gimg_path,
