@@ -33,3 +33,4 @@ test:
   evaluate: False
   eval_freq: -1
   rerank: False
+  visrank: True
