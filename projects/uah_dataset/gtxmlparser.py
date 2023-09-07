@@ -73,10 +73,17 @@ def generate_all_xml_of_dataset(folder: str) -> None:
         generate_xml_using_octave(dir)
 
 
+# TODO: Structure this code a little bit: The idea for now is to return a list
+# of tuples. Maybe we want to copy this funcion to another one to do the change?
 def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
     # Expand the ~
     file = os.path.expanduser(file)
     identities: list[int] = []
+
+    width_parsed, height_parsed = 0, 0
+    path = ""
+    coords_list: list[tuple[int, int, int, int]] = []
+    size_list: list[tuple[int, int]] = []
 
     xml_doc = xml.dom.minidom.parse(file)
     # There is only one annotation on every document.
@@ -102,6 +109,66 @@ def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
 
         identities.append(number_id)
 
+        bb_wrapper = obj.getElementsByTagName("bndbox")
+        if len(bb_wrapper) > 1:
+            raise ValueError(f"The xml {file=}  has more than bndbox in an object")
+
+        # FIXME: This seems to work, but it shouldn't be a for. There should
+        # only be one bndbox tag in per object tag.
+        for bb_box in bb_wrapper:
+            xmin_tag = bb_box.getElementsByTagName("xmin")
+            xmin = xmin_tag[0].childNodes[0].data
+
+            xmax_tag = bb_box.getElementsByTagName("xmax")
+            xmax = xmax_tag[0].childNodes[0].data
+
+            ymin_tag = bb_box.getElementsByTagName("ymin")
+            ymin = ymin_tag[0].childNodes[0].data
+
+            ymax_tag = bb_box.getElementsByTagName("ymax")
+            ymax = ymax_tag[0].childNodes[0].data
+
+            try:
+                xmin_parsed = int(xmin)
+                xmax_parsed = int(xmax)
+                ymin_parsed = int(ymin)
+                ymax_parsed = int(ymax)
+                coords_list.append((xmin_parsed, xmax_parsed, ymin_parsed, ymax_parsed))
+            except ValueError:
+                # This is something going very wrong if we have to throw here,
+                # but I want to be able to print a little more info, so print and raise.
+                print(
+                    f"Error parsing bounding box in file {file=} .\n"
+                    + f"{xmin=}, {xmax=}, {ymin=}, {ymax=}"
+                )
+                raise
+
+    size_wrapper = annotation.getElementsByTagName("size")
+    if len(size_wrapper) > 1:
+        raise ValueError(f"The xml document {file=} has more than one dim tag")
+
+    # Only parse the size of the image if we have any person of interest on in
+    # (don't do it if all identities > 100)
+    if len(identities) != 0:
+        # FIXME: This seems to work, but it shouldn't be a for. There should only
+        # be one dim tag in the xml document.
+        for dim in size_wrapper:
+            width_tag = dim.getElementsByTagName("width")
+            width = width_tag[0].childNodes[0].data
+            height_tag = dim.getElementsByTagName("height")
+            height = height_tag[0].childNodes[0].data
+            try:
+                width_parsed = int(width)
+                height_parsed = int(height)
+                size_list.append((width_parsed, height_parsed))
+            except ValueError:
+                # This is something going very wrong if we have to throw here,
+                # but I want to be able to print a little more info, so print and raise.
+                print(
+                    f"Error parsing dimensions of image in file {file=} .\n"
+                    + f"{width=}, {height=}"
+                )
+                raise
 
     print(f"Parsing an image:{path=}, {identities=}")
     return path, identities
