@@ -6,6 +6,8 @@ import subprocess
 import os
 import re
 import shutil
+from PIL import Image
+from typing import Optional
 
 
 def generate_frames(
@@ -238,6 +240,43 @@ def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str
     dict_people_files_global = build_rev_dict_gt_xml(dict_files_people_global)
 
     return dict_files_people_global, dict_people_files_global
+
+
+def crop_image(
+    path: str, idx: Optional[int], x_min: int, x_max: int, y_min: int, y_max: int
+) -> str:
+    """
+    This function crops an image to (x_min-x_max, y_min-y_max) and saves it in
+    the original path with _ + str(idx) as suffix. If no sufix is given it uses
+    0 by default.
+    """
+    idx = idx if idx is not None else 0
+
+    img = Image.open(path)
+    new_img = img.crop((x_min, y_min, x_max, y_max))
+
+    # This is a hack to separate the absolute path and the extension, but as we
+    # have a user with a dot in it's name, we can't relly in the dot to act as
+    # a separator between the filename and the extension and extract it with
+    # regex. Also the iteration should always be O(c*1), with a very small c.
+    dot_char_idx = -1
+    for char in reversed(path):
+        if char == ".":
+            break
+        dot_char_idx -= 1
+
+    # We use dot_char_idx + 1 to exclude the point of the extension.
+    filename_without_extension, extension = (
+        path[:dot_char_idx],
+        path[dot_char_idx + 1 :],
+    )
+
+    new_path = filename_without_extension + "_" + str(idx) + "." + extension
+
+    new_img.save(new_path)
+
+    print(f"Cropped {path=}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}")
+    return new_path
 
 
 if __name__ == "__main__":
