@@ -75,7 +75,7 @@ def generate_all_xml_of_dataset(folder: str) -> None:
 
 # TODO: Structure this code a little bit: The idea for now is to return a list
 # of tuples. Maybe we want to copy this funcion to another one to do the change?
-def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
+def parse_gt_xml_file(file: str, crop_images=False) -> list[Tuple[str, list[int]]]:
     # Expand the ~
     file = os.path.expanduser(file)
     identities: list[int] = []
@@ -171,7 +171,7 @@ def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
                 raise
 
     print(f"Parsing an image:{path=}, {identities=}")
-    return path, identities
+    return [(path, identities)]
 
 
 def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
@@ -193,8 +193,10 @@ def parse_gt_xml_video(files: list[str]) -> Dict[str, list[int]]:
 
     for file in files:
         file = os.path.expanduser(file)
-        image_path, people = parse_gt_xml_file(file)
-        dict_file_people[image_path] = people
+        xml_data_list = parse_gt_xml_file(file)
+        for elem in xml_data_list:
+            image_path, people = elem
+            dict_file_people[image_path] = people
 
     return dict_file_people
 
