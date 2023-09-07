@@ -55,6 +55,7 @@ def generate_xml_using_octave(folder: str, remove_xml: bool = False) -> None:
         shutil.rmtree(xml_dir, ignore_errors=True)
 
     command = ["octave", "--eval", f"gt2xml('{gt_file}', '{frames_dir}', '{xml_dir}')"]
+    print(f"Running octave command: {command=}")
     subprocess.run(command)
 
 
@@ -81,12 +82,12 @@ def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
     # There is only one annotation on every document.
     annotation = xml_doc.getElementsByTagName("annotation")[0]
     path_tag = annotation.getElementsByTagName("path")
-    p = path_tag[0].childNodes[0].data
+    path = path_tag[0].childNodes[0].data
+
     objs = annotation.getElementsByTagName("object")
     for obj in objs:
-        id = obj.getElementsByTagName("id")
-        parsed_id = id[0].childNodes[0].data
-
+        id_ = obj.getElementsByTagName("id")
+        parsed_id = id_[0].childNodes[0].data
         try:
             number_id = int(parsed_id)
         except ValueError:
@@ -101,7 +102,9 @@ def parse_gt_xml_file(file: str) -> Tuple[str, list[int]]:
 
         identities.append(number_id)
 
-    return p, identities
+
+    print(f"Parsing an image:{path=}, {identities=}")
+    return path, identities
 
 
 def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
@@ -169,7 +172,9 @@ def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str
 
 
 if __name__ == "__main__":
-    folder = os.path.expanduser("~/dataset/gba_dataset/")
+    folder = os.path.expanduser("~/Documents/gba_dataset")
+    generate_frames(folder)
+    generate_all_xml_of_dataset(folder)
     if os.path.exists(folder):
         d, rd = parse_all_xml(folder)
         for k, v in d.items():
