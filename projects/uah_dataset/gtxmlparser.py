@@ -135,8 +135,12 @@ def parse_gt_xml_file(file: str, crop_images=False) -> list[Tuple[str, list[int]
                 xmax_parsed = int(xmax)
                 ymin_parsed = int(ymin)
                 ymax_parsed = int(ymax)
+
+                assert xmax_parsed > xmin_parsed
+                assert ymax_parsed > ymin_parsed
+
                 coords_list.append((xmin_parsed, xmax_parsed, ymin_parsed, ymax_parsed))
-            except ValueError:
+            except (ValueError, AssertionError):
                 # This is something going very wrong if we have to throw here,
                 # but I want to be able to print a little more info, so print and raise.
                 print(
