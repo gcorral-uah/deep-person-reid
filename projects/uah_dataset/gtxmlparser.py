@@ -77,7 +77,9 @@ def generate_all_xml_of_dataset(folder: str) -> None:
 
 # TODO: Structure this code a little bit: The idea for now is to return a list
 # of tuples. Maybe we want to copy this funcion to another one to do the change?
-def parse_gt_xml_file(file: str, crop_images=False) -> list[Tuple[str, list[int]]]:
+def parse_gt_xml_file_and_maybe_crop(
+    file: str, crop_images=False
+) -> list[Tuple[str, list[int]]]:
     # Expand the ~
     file = os.path.expanduser(file)
     identities: list[int] = []
@@ -208,7 +210,7 @@ def parse_gt_xml_video(files: list[str], crop_images=False) -> Dict[str, list[in
 
     for file in files:
         file = os.path.expanduser(file)
-        xml_data_list = parse_gt_xml_file(file, crop_images=crop_images)
+        xml_data_list = parse_gt_xml_file_and_maybe_crop(file, crop_images=crop_images)
         for elem in xml_data_list:
             image_path, people = elem
             dict_file_people[image_path] = people
@@ -291,7 +293,9 @@ def crop_image(
 
     new_img.save(new_path)
 
-    print(f"Cropped {path=} and {id=} to form {new_path}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}")
+    print(
+        f"Cropped {path=} and {id=} to form {new_path}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}"
+    )
     return new_path
 
 
