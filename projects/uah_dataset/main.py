@@ -66,6 +66,9 @@ def get_default_config():
     cfg.cuhk03.classic_split = False  # use classic split by Li et al. CVPR14
     cfg.cuhk03.use_metric_cuhk03 = False  # use cuhk03's metric for evaluation
 
+    cfg.uah = CN()
+    cfg.uah.crop_images = False # Crop the images to only have one person per image.
+
     # sampler
     cfg.sampler = CN()
     cfg.sampler.train_sampler = "RandomSampler"  # sampler for source train loader
@@ -177,6 +180,7 @@ def imagedata_kwargs(cfg):
         "cuhk03_labeled": cfg.cuhk03.labeled_images,
         "cuhk03_classic_split": cfg.cuhk03.classic_split,
         "market1501_500k": cfg.market1501.use_500k_distractors,
+        "uah_dataset_crop_images": cfg.uah.crop_images,
     }
 
 

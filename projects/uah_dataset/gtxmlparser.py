@@ -176,8 +176,17 @@ def parse_gt_xml_file(file: str, crop_images=False) -> list[Tuple[str, list[int]
                 )
                 raise
 
-    print(f"Parsing an image:{path=}, {identities=}")
-    return [(path, identities)]
+    if crop_images:
+        print(f"Cropping {path=}")
+        cropped_data: list[Tuple[str, list[int]]] = []
+        for id_, elem in zip(identities, coords_list):
+            coords = elem
+            new_path = crop_image(path, id_, coords[0], coords[1], coords[2], coords[3])
+            cropped_data.append((new_path, [id_]))
+        return cropped_data
+    else:
+        print(f"Parsing an image:{path=}, {identities=}")
+        return [(path, identities)]
 
 
 def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
@@ -194,12 +203,12 @@ def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
     return reverse_map
 
 
-def parse_gt_xml_video(files: list[str]) -> Dict[str, list[int]]:
+def parse_gt_xml_video(files: list[str], crop_images=False) -> Dict[str, list[int]]:
     dict_file_people: Dict[str, list[int]] = {}
 
     for file in files:
         file = os.path.expanduser(file)
-        xml_data_list = parse_gt_xml_file(file)
+        xml_data_list = parse_gt_xml_file(file, crop_images=crop_images)
         for elem in xml_data_list:
             image_path, people = elem
             dict_file_people[image_path] = people
@@ -207,7 +216,7 @@ def parse_gt_xml_video(files: list[str]) -> Dict[str, list[int]]:
     return dict_file_people
 
 
-def parse_gt_xml_dir(path: str) -> Dict[str, list[int]]:
+def parse_gt_xml_dir(path: str, crop_images=False) -> Dict[str, list[int]]:
     # Expand the ~
     path = os.path.expanduser(path)
 
@@ -215,11 +224,13 @@ def parse_gt_xml_dir(path: str) -> Dict[str, list[int]]:
     p = path + "/" if path[-1] != "/" else path
     files_loc = [p + f for f in files]
 
-    dict_file_people = parse_gt_xml_video(files_loc)
+    dict_file_people = parse_gt_xml_video(files_loc, crop_images=crop_images)
     return dict_file_people
 
 
-def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str]]]:
+def parse_all_xml(
+    folder: str, crop_images=False
+) -> Tuple[Dict[str, list[int]], Dict[int, list[str]]]:
     # Expand the ~
     folder = os.path.expanduser(folder)
     subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
@@ -235,7 +246,7 @@ def parse_all_xml(folder: str) -> Tuple[Dict[str, list[int]], Dict[int, list[str
         real_dir = dir + "/" if dir[-1] != "/" else dir
         xml_dir = real_dir + "xml"
 
-        dict_people_files_directory = parse_gt_xml_dir(xml_dir)
+        dict_people_files_directory = parse_gt_xml_dir(xml_dir, crop_images=crop_images)
         # Merge the two dicts.
         dict_files_people_global = (
             dict_files_people_global | dict_people_files_directory
@@ -253,6 +264,7 @@ def crop_image(
     This function crops an image to (x_min-x_max, y_min-y_max) and saves it in
     the original path with _ + str(idx) as suffix. If no sufix is given it uses
     0 by default.
+    It returns the path of the cropeed image.
     """
     idx = idx if idx is not None else 0
 
@@ -279,7 +291,7 @@ def crop_image(
 
     new_img.save(new_path)
 
-    print(f"Cropped {path=}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}")
+    print(f"Cropped {path=} and {id=} to form {new_path}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}")
     return new_path
 
 
@@ -288,7 +300,7 @@ if __name__ == "__main__":
     generate_frames(folder)
     generate_all_xml_of_dataset(folder)
     if os.path.exists(folder):
-        d, rd = parse_all_xml(folder)
+        d, rd = parse_all_xml(folder, crop_images=False)
         for k, v in d.items():
             print(f"[{k}]= [")
             for item in v:

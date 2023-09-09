@@ -12,7 +12,13 @@ class UAHDataset(ImageDataset):
     dataset_url = None
 
     # NOTE: I am basing this loader in ilids.py
-    def __init__(self, root: str = "", training_test_split: float = 0.5, **kwargs):
+    def __init__(
+        self,
+        crop_images=False,
+        root: str = "",
+        training_test_split: float = 0.5,
+        **kwargs
+    ):
         self.old_new_label_dict: Optional[dict[int, int]] = None
 
         self.root = osp.abspath(osp.expanduser(root))
@@ -20,6 +26,7 @@ class UAHDataset(ImageDataset):
         self.download_dataset(self.dataset_dir, self.dataset_url)
         self.prepare_dataset(self.dataset_dir)
         self.training_test_split = training_test_split
+        self.crop_images = crop_images
 
         # All you need to do here is to generate three lists,
         # which are train, query and gallery.
@@ -62,7 +69,7 @@ class UAHDataset(ImageDataset):
         # the subjects with id 1, 3 and go into the training data, and the ones
         # with id 2 and 5 go into testing or validation folds.
 
-        _, pid_dict = parse_all_xml(self.dataset_dir)
+        _, pid_dict = parse_all_xml(self.dataset_dir, crop_images=self.crop_images)
         pids = list(pid_dict.keys())
         num_pids = len(pids)
         num_train_pids = int(num_pids * self.training_test_split)
@@ -78,8 +85,9 @@ class UAHDataset(ImageDataset):
         camera_query = 0
         camera_gallery = 1
 
-        # The training labels should start from zero and increment by one for one-shot-encoding.
-        # We make the test labels start from the last one of the training dataset
+        # The training labels should start from zero and increment by one for
+        # one-shot-encoding. We make the test labels start from the last one of
+        # the training dataset
         # https://github.com/KaiyangZhou/deep-person-reid/issues/190#issuecomment-502843010
         label_train_dict = {label: index for index, label in enumerate(train_pids)}
         label_test_dict = {
