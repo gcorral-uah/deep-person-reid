@@ -294,7 +294,7 @@ def crop_image(
     new_img.save(new_path)
 
     print(
-        f"Cropped {path=} and {id=} to form {new_path}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}"
+        f"Cropped {path=} and {idx=} to form {new_path}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}"
     )
     return new_path
 
