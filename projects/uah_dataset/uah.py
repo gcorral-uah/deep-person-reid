@@ -1,7 +1,7 @@
 import copy
 import os.path as osp
-import random
 from typing import Optional
+import random
 
 from torchreid.data import ImageDataset
 from gtxmlparser import parse_all_xml, generate_frames, generate_all_xml_of_dataset
@@ -11,13 +11,14 @@ class UAHDataset(ImageDataset):
     dataset_dir = "gba_dataset/"
     dataset_url = None
 
-    # NOTE: I am basing this loader in ilids.py
+    # NOTE: This is based after the loader in ilids.py
     def __init__(
         self,
         crop_images=False,
         root: str = "",
         training_test_split: float = 0.5,
-        **kwargs
+        shuffle_train_test_pids: bool = True,
+        **kwargs,
     ):
         self.old_new_label_dict: Optional[dict[int, int]] = None
 
@@ -26,6 +27,7 @@ class UAHDataset(ImageDataset):
         self.download_dataset(self.dataset_dir, self.dataset_url)
         self.prepare_dataset(self.dataset_dir)
         self.training_test_split = training_test_split
+        self.shuffle_train_test_pids = shuffle_train_test_pids
         self.crop_images = crop_images
 
         # All you need to do here is to generate three lists,
@@ -74,7 +76,17 @@ class UAHDataset(ImageDataset):
         num_pids = len(pids)
         num_train_pids = int(num_pids * self.training_test_split)
         pids_copy = copy.deepcopy(pids)
-        random.shuffle(pids_copy)
+        if self.shuffle_train_test_pids:
+            random.shuffle(pids_copy)
+
+        # The training labels should start from zero and increment by one for
+        # one-shot-encoding. We realize that the trains_pids are the
+        # N first ones and the test pids are the len - N last one's
+        # https://github.com/KaiyangZhou/deep-person-reid/issues/190#issuecomment-502843010
+        label_dict = {label: index for index, label in enumerate(pids_copy)}
+        self.old_new_label_dict = label_dict
+        print(f"The dict with the translation of the labels is: {label_dict=}")
+
         train_pids = pids_copy[:num_train_pids]
         test_pids = pids_copy[num_train_pids:]
 
@@ -84,18 +96,6 @@ class UAHDataset(ImageDataset):
         camera_train = 0
         camera_query = 0
         camera_gallery = 1
-
-        # The training labels should start from zero and increment by one for
-        # one-shot-encoding. We make the test labels start from the last one of
-        # the training dataset
-        # https://github.com/KaiyangZhou/deep-person-reid/issues/190#issuecomment-502843010
-        label_train_dict = {label: index for index, label in enumerate(train_pids)}
-        label_test_dict = {
-            label: index + len(train_pids) for index, label in enumerate(test_pids)
-        }
-        label_dict = label_train_dict | label_test_dict
-
-        self.old_new_label_dict = label_dict
 
         # for train IDs, all images are used in the train set.
         for pid in train_pids:
