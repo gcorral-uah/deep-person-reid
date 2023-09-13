@@ -270,9 +270,6 @@ def crop_image(
     """
     idx = idx if idx is not None else 0
 
-    img = Image.open(path)
-    new_img = img.crop((x_min, y_min, x_max, y_max))
-
     # This is a hack to separate the absolute path and the extension, but as we
     # have a user with a dot in it's name, we can't relly in the dot to act as
     # a separator between the filename and the extension and extract it with
@@ -291,11 +288,20 @@ def crop_image(
 
     new_path = filename_without_extension + "_" + str(idx) + "." + extension
 
+    # To avoid work, if the new file already exists, we can skip the work.
+    if os.path.isfile(new_path):
+        print(f"Skipping the cropping of {new_path=}, because it already exists")
+        return new_path
+
+    img = Image.open(path)
+    new_img = img.crop((x_min, y_min, x_max, y_max))
     new_img.save(new_path)
 
     print(
-        f"Cropped {path=} and {idx=} to form {new_path}, with {x_min=}, {x_max=}, {y_min=}, {y_max=}"
+        f"Cropped {path=} and {idx=} to form {new_path},"
+        + f"with {x_min=}, {x_max=}, {y_min=}, {y_max=}"
     )
+
     return new_path
 
 
