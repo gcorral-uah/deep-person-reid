@@ -14,10 +14,10 @@ class UAHDataset(ImageDataset):
     # NOTE: This is based after the loader in ilids.py
     def __init__(
         self,
-        crop_images=False,
+        crop_images: bool = True,
         root: str = "",
         training_test_split: float = 0.5,
-        shuffle_train_test_pids: bool = True,
+        shuffle_train_test_pids: bool = False,
         **kwargs,
     ):
         self.old_new_label_dict: Optional[dict[int, int]] = None
