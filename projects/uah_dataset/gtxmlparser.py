@@ -330,6 +330,24 @@ def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> flo
     return iou
 
 
+def calculate_best_fit_yolo(
+    identities: list[int],
+    coords_list: list[tuple[int, int, int, int]],
+    yolo_ids: list[int],
+    yolo_results: list[tuple[int, int, int, int]],
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
+) -> list[tuple[int, tuple[int, int, int, int]]]:
+    results: list[tuple[int, tuple[int, int, int, int]]] = []
+
+    for annotation_id, coords in zip(identities, coords_list):
+        for yolo_coords in yolo_results:
+            iou_result = iou(coords, yolo_coords)
+            if iou_result >= iou_threshold and annotation_id in yolo_ids:
+                results.append((annotation_id, yolo_coords))
+
+    return results
+
+
 def crop_image(
     path: str, idx: Optional[int], x_min: int, x_max: int, y_min: int, y_max: int
 ) -> str:
