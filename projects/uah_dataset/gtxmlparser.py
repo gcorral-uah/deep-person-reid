@@ -8,6 +8,13 @@ import re
 import shutil
 from PIL import Image
 from typing import Optional
+from ultralytics import YOLO
+
+YOLO_DETECTON_THRESHOLD: float = 0.8
+YOLO_IOU_THRESHOLD: float = 0.8
+YOLO_CLASSES_MAP: dict[str, int] = {
+    "human": 0,
+}
 
 
 def generate_frames(
@@ -257,6 +264,36 @@ def parse_all_xml(
     dict_people_files_global = build_rev_dict_gt_xml(dict_files_people_global)
 
     return dict_files_people_global, dict_people_files_global
+
+
+def calculate_yolo(
+    path: str,
+    classes: list[int] = [YOLO_CLASSES_MAP["human"]],
+    confidence_threshold: float = YOLO_IOU_THRESHOLD,
+) -> list[tuple[int, int, int, int]]:
+    model = YOLO("yolov8n.pt")  # pretrained YOLOv8n model
+
+    results = model([path], classes=classes, conf=confidence_threshold)
+
+    boxes: list[list[int]] = []
+    for idx, result in enumerate(results):
+        assert idx == 0  # Confirmation that we only have one result.
+
+        # Location of human bounding boxes.
+        boxes = result.boxes.xyxy.detach().cpu().numpy().astype(int).tolist()
+
+    print(f"The YOLO bboxes are {boxes=}")
+
+    tuple_boxes: list[tuple[int, int, int, int]] = []
+    for array in boxes:
+        x_min = array[0]
+        x_max = array[1]
+        y_min = array[2]
+        y_max = array[3]
+        crop_tuple = (x_min, x_max, y_min, y_max)
+        tuple_boxes.append(crop_tuple)
+
+    return tuple_boxes
 
 
 def crop_image(

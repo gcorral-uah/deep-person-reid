@@ -15,6 +15,7 @@ yapf
 isort
 imageio
 chardet
+ultralytics
 # Export --------------------------------------
 # onnx
 # onnx-simplified
