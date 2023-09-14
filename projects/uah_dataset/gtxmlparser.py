@@ -296,6 +296,40 @@ def calculate_yolo(
     return tuple_boxes
 
 
+def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> float:
+    x_min_a = objA[0]
+    x_max_a = objA[1]
+    y_min_a = objA[2]
+    y_max_a = objA[3]
+
+    x_min_b = objB[0]
+    x_max_b = objB[1]
+    y_min_b = objB[2]
+    y_max_b = objB[3]
+
+    # determine the (x, y)-coordinates of the intersection rectangle
+    xmax = max(x_max_a, x_max_b)
+    ymax = max(y_max_a, y_max_b)
+    xmin = min(x_min_a, x_min_b)
+    ymin = min(y_min_a, y_min_b)
+
+    # compute the area of intersection rectangle
+    interArea = max(0, xmax - xmin + 1) * max(0, ymax - ymin + 1)
+
+    # compute the area of both the prediction and ground-truth
+    # rectangles
+    boxAArea = (x_max_a - x_min_a + 1) * (y_max_a - y_min_a + 1)
+    boxBArea = (x_max_b - x_min_b + 1) * (y_max_b - y_min_b + 1)
+
+    # compute the intersection over union by taking the intersection area and
+    # dividing it by the sum of prediction + ground-truth areas - the
+    # interesection area (The intersecton area is sumed twice, so we have to
+    # substract it once, to obtain the correct resutl)
+    iou = float(interArea) / float(boxAArea + boxBArea - interArea)
+
+    return iou
+
+
 def crop_image(
     path: str, idx: Optional[int], x_min: int, x_max: int, y_min: int, y_max: int
 ) -> str:
