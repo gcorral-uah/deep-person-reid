@@ -352,7 +352,7 @@ def calculate_best_fit_yolo(
 
 
 def crop_image(
-    path: str, idx: Optional[int], x_min: int, x_max: int, y_min: int, y_max: int
+    path: str, idx: Optional[int], x_min: int, x_max: int, y_min: int, y_max: int, use_yolo: bool = False
 ) -> str:
     """
     This function crops an image to (x_min-x_max, y_min-y_max) and saves it in
@@ -378,7 +378,8 @@ def crop_image(
         path[dot_char_idx + 1 :],
     )
 
-    new_path = filename_without_extension + "_" + str(idx) + "." + extension
+    yolo_msg = "_yolo_" if use_yolo is True else ""
+    new_path = filename_without_extension + yolo_msg + "_" + str(idx) + "." + extension
 
     # To avoid work, if the new file already exists, we can skip the work.
     if os.path.isfile(new_path):
