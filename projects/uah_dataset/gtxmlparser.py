@@ -82,10 +82,13 @@ def generate_all_xml_of_dataset(folder: str) -> None:
         generate_xml_using_octave(dir)
 
 
-# TODO: Structure this code a little bit: The idea for now is to return a list
-# of tuples. Maybe we want to copy this funcion to another one to do the change?
+# TODO: Refactor, this function is becomming a monstruosity.
 def parse_gt_xml_file_and_maybe_crop(
-    file: str, crop_images=False
+    file: str,
+    crop_images=False,
+    use_yolo: bool = False,
+    yolo_ids: list[int] = [],
+    yolo_threshold=YOLO_IOU_THRESHOLD,
 ) -> list[Tuple[str, list[int]]]:
     # Expand the ~
     file = os.path.expanduser(file)
