@@ -4,7 +4,13 @@ from typing import Optional
 import random
 
 from torchreid.data import ImageDataset
-from gtxmlparser import parse_all_xml, generate_frames, generate_all_xml_of_dataset
+from gtxmlparser import (
+    parse_all_xml,
+    generate_frames,
+    generate_all_xml_of_dataset,
+    YOLO_IOU_THRESHOLD,
+    YOLO_DETECTON_THRESHOLD,
+)
 
 
 class UAHDataset(ImageDataset):
@@ -14,13 +20,17 @@ class UAHDataset(ImageDataset):
     # NOTE: This is based after the loader in ilids.py
     def __init__(
         self,
-        crop_images: bool = True,
         root: str = "",
+        crop_images: bool = True,
+        use_yolo_for_testing: bool = False,
+        yolo_threshold: Optional[int] = None,
+        iou_threshold: Optional[int] = None,
         training_test_split: float = 0.5,
         shuffle_train_test_pids: bool = False,
         **kwargs,
     ):
         self.old_new_label_dict: Optional[dict[int, int]] = None
+        self.pid_dict_before_yolo: Optional[dict[int, list[str]]] = None
 
         self.root = osp.abspath(osp.expanduser(root))
         self.dataset_dir = osp.join(self.root, self.dataset_dir)
@@ -29,6 +39,13 @@ class UAHDataset(ImageDataset):
         self.training_test_split = training_test_split
         self.shuffle_train_test_pids = shuffle_train_test_pids
         self.crop_images = crop_images
+        self.use_yolo_for_testing = use_yolo_for_testing
+        self.yolo_threshold = (
+            yolo_threshold if yolo_threshold is not None else YOLO_DETECTON_THRESHOLD
+        )
+        self.yolo_iou_threshold = (
+            iou_threshold if iou_threshold is not None else YOLO_IOU_THRESHOLD
+        )
 
         # All you need to do here is to generate three lists,
         # which are train, query and gallery.
@@ -71,7 +88,12 @@ class UAHDataset(ImageDataset):
         # the subjects with id 1, 3 and go into the training data, and the ones
         # with id 2 and 5 go into testing or validation folds.
 
-        _, pid_dict = parse_all_xml(self.dataset_dir, crop_images=self.crop_images)
+        # If we use YOLO we have to do 2 passes of parsing the xml. The first
+        # one is to separate in training and test PIDS. If we don't use YOLO
+        # this is the only pass neccesary.
+        _, pid_dict = parse_all_xml(
+            self.dataset_dir, crop_images=self.crop_images, use_yolo=False
+        )
         pids = list(pid_dict.keys())
         num_pids = len(pids)
         num_train_pids = int(num_pids * self.training_test_split)
@@ -89,6 +111,19 @@ class UAHDataset(ImageDataset):
 
         train_pids = pids_copy[:num_train_pids]
         test_pids = pids_copy[num_train_pids:]
+
+        if self.use_yolo_for_testing:
+            # Parse all the xml again, and in consecuence do the cropping with
+            # YOLO, with the predeterminded train/test PID split.
+            self.pid_dict_before_yolo = pid_dict.copy()
+            _, pid_dict = parse_all_xml(
+                self.dataset_dir,
+                crop_images=self.crop_images,
+                use_yolo=True,
+                yolo_ids=test_pids,
+                yolo_threshold=self.yolo_threshold,
+                iou_threshold=self.yolo_iou_threshold,
+            )
 
         train: list[tuple[str, int, int]] = []
         query: list[tuple[str, int, int]] = []
