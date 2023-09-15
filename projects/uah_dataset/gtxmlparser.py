@@ -85,7 +85,7 @@ def generate_all_xml_of_dataset(folder: str) -> None:
 # TODO: Refactor, this function is becoming a monstrosity.
 def parse_gt_xml_file_and_maybe_crop(
     file: str,
-    crop_images=False,
+    crop_images: bool = False,
     use_yolo: bool = False,
     yolo_ids: list[int] = [],
     yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
@@ -252,12 +252,26 @@ def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
     return reverse_map
 
 
-def parse_gt_xml_video(files: list[str], crop_images=False) -> Dict[str, list[int]]:
+def parse_gt_xml_video(
+    files: list[str],
+    crop_images: bool = False,
+    use_yolo: bool = False,
+    yolo_ids: list[int] = [],
+    yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
+) -> Dict[str, list[int]]:
     dict_file_people: Dict[str, list[int]] = {}
 
     for file in files:
         file = os.path.expanduser(file)
-        xml_data_list = parse_gt_xml_file_and_maybe_crop(file, crop_images=crop_images)
+        xml_data_list = parse_gt_xml_file_and_maybe_crop(
+            file,
+            use_yolo=use_yolo,
+            yolo_ids=yolo_ids,
+            crop_images=crop_images,
+            yolo_threshold=yolo_threshold,
+            iou_threshold=iou_threshold,
+        )
         for elem in xml_data_list:
             image_path, people = elem
             dict_file_people[image_path] = people
@@ -265,7 +279,14 @@ def parse_gt_xml_video(files: list[str], crop_images=False) -> Dict[str, list[in
     return dict_file_people
 
 
-def parse_gt_xml_dir(path: str, crop_images=False) -> Dict[str, list[int]]:
+def parse_gt_xml_dir(
+    path: str,
+    crop_images: bool = False,
+    use_yolo: bool = False,
+    yolo_ids: list[int] = [],
+    yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
+) -> Dict[str, list[int]]:
     # Expand the ~
     path = os.path.expanduser(path)
 
@@ -273,12 +294,24 @@ def parse_gt_xml_dir(path: str, crop_images=False) -> Dict[str, list[int]]:
     p = path + "/" if path[-1] != "/" else path
     files_loc = [p + f for f in files]
 
-    dict_file_people = parse_gt_xml_video(files_loc, crop_images=crop_images)
+    dict_file_people = parse_gt_xml_video(
+        files_loc,
+        use_yolo=use_yolo,
+        yolo_ids=yolo_ids,
+        crop_images=crop_images,
+        yolo_threshold=yolo_threshold,
+        iou_threshold=iou_threshold,
+    )
     return dict_file_people
 
 
 def parse_all_xml(
-    folder: str, crop_images=False
+    folder: str,
+    crop_images: bool = False,
+    use_yolo: bool = False,
+    yolo_ids: list[int] = [],
+    yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
 ) -> Tuple[Dict[str, list[int]], Dict[int, list[str]]]:
     # Expand the ~
     folder = os.path.expanduser(folder)
@@ -295,7 +328,14 @@ def parse_all_xml(
         real_dir = dir + "/" if dir[-1] != "/" else dir
         xml_dir = real_dir + "xml"
 
-        dict_people_files_directory = parse_gt_xml_dir(xml_dir, crop_images=crop_images)
+        dict_people_files_directory = parse_gt_xml_dir(
+            xml_dir,
+            use_yolo=use_yolo,
+            yolo_ids=yolo_ids,
+            crop_images=crop_images,
+            yolo_threshold=yolo_threshold,
+            iou_threshold=iou_threshold,
+        )
         # Merge the two dicts.
         dict_files_people_global = (
             dict_files_people_global | dict_people_files_directory
@@ -389,7 +429,13 @@ def calculate_best_fit_yolo(
 
 
 def crop_image(
-    path: str, idx: Optional[int], x_min: int, x_max: int, y_min: int, y_max: int, use_yolo: bool = False
+    path: str,
+    idx: Optional[int],
+    x_min: int,
+    x_max: int,
+    y_min: int,
+    y_max: int,
+    use_yolo: bool = False,
 ) -> str:
     """
     This function crops an image to (x_min-x_max, y_min-y_max) and saves it in
