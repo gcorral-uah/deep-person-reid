@@ -82,13 +82,14 @@ def generate_all_xml_of_dataset(folder: str) -> None:
         generate_xml_using_octave(dir)
 
 
-# TODO: Refactor, this function is becomming a monstruosity.
+# TODO: Refactor, this function is becoming a monstrosity.
 def parse_gt_xml_file_and_maybe_crop(
     file: str,
     crop_images=False,
     use_yolo: bool = False,
     yolo_ids: list[int] = [],
-    yolo_threshold=YOLO_IOU_THRESHOLD,
+    yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
 ) -> list[Tuple[str, list[int]]]:
     # Expand the ~
     file = os.path.expanduser(file)
@@ -188,13 +189,49 @@ def parse_gt_xml_file_and_maybe_crop(
                 )
                 raise
 
+    if use_yolo and len(yolo_ids) == 0:
+        # If we haven't specified any ids to crop with YOLO, use them all.
+        yolo_ids = identities
+
     if crop_images:
-        print(f"Cropping {path=}")
         cropped_data: list[Tuple[str, list[int]]] = []
-        for id_, elem in zip(identities, coords_list):
-            coords = elem
-            new_path = crop_image(path, id_, coords[0], coords[1], coords[2], coords[3])
-            cropped_data.append((new_path, [id_]))
+
+        if use_yolo:
+            print(f"Cropping {path=} with YOLO")
+            yolo_results = calculate_yolo(path, confidence_threshold=yolo_threshold)
+            yolo_ids_result, yolo_coords = calculate_best_fit_yolo(
+                identities,
+                coords_list,
+                yolo_ids,
+                yolo_results,
+                iou_threshold=iou_threshold,
+            )
+            for id_, coords in yolo_ids_result, yolo_coords:
+                new_path = crop_image(
+                    path,
+                    id_,
+                    coords[0],
+                    coords[1],
+                    coords[2],
+                    coords[3],
+                    use_yolo=True,
+                )
+                cropped_data.append((new_path, [id_]))
+
+        else:
+            print(f"Cropping {path=}")
+            for id_, coords in zip(identities, coords_list):
+                new_path = crop_image(
+                    path,
+                    id_,
+                    coords[0],
+                    coords[1],
+                    coords[2],
+                    coords[3],
+                    use_yolo=False,
+                )
+                cropped_data.append((new_path, [id_]))
+
         return cropped_data
     else:
         print(f"Parsing an image:{path=}, {identities=}")
