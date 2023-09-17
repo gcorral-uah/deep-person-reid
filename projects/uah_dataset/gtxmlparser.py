@@ -9,6 +9,7 @@ import shutil
 from PIL import Image
 from typing import Optional
 from ultralytics import YOLO
+import functools
 
 YOLO_DETECTON_THRESHOLD: float = 0.8
 YOLO_IOU_THRESHOLD: float = 0.8
@@ -97,6 +98,7 @@ def parse_gt_xml_file_and_maybe_crop(
 
     width_parsed, height_parsed = 0, 0
     path = ""
+    # The coordinates tuples must be (xmin, xmax, ymin, ymax)
     coords_list: list[tuple[int, int, int, int]] = []
     size_list: list[tuple[int, int]] = []
 
@@ -152,6 +154,7 @@ def parse_gt_xml_file_and_maybe_crop(
                 assert xmax_parsed > xmin_parsed
                 assert ymax_parsed > ymin_parsed
 
+                # The coordinates tuples must be (xmin, xmax, ymin, ymax)
                 coords_list.append((xmin_parsed, xmax_parsed, ymin_parsed, ymax_parsed))
             except (ValueError, AssertionError):
                 # This is something going very wrong if we have to throw here,
@@ -221,6 +224,7 @@ def parse_gt_xml_file_and_maybe_crop(
         else:
             print(f"Cropping {path=}")
             for id_, coords in zip(identities, coords_list):
+                # The coordinates tuples must be (xmin, xmax, ymin, ymax)
                 new_path = crop_image(
                     path,
                     id_,
@@ -364,11 +368,13 @@ def calculate_yolo(
 
     print(f"The YOLO bboxes are {boxes=}")
 
+    # The coordinates tuples must be  (xmin, xmax, ymin, ymax)
+    # The tuples returned by yolo are (xmin, ymin, xmax, ymax)
     tuple_boxes: list[tuple[int, int, int, int]] = []
     for array in boxes:
         x_min = array[0]
-        x_max = array[1]
-        y_min = array[2]
+        y_min = array[1]
+        x_max = array[2]
         y_max = array[3]
         crop_tuple = (x_min, x_max, y_min, y_max)
         tuple_boxes.append(crop_tuple)
@@ -377,6 +383,7 @@ def calculate_yolo(
 
 
 def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> float:
+    # The coordinates tuples must be (xmin, xmax, ymin, ymax)
     x_min_a = objA[0]
     x_max_a = objA[1]
     y_min_a = objA[2]
