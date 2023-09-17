@@ -481,7 +481,7 @@ def crop_image(
         path[dot_char_idx + 1 :],
     )
 
-    yolo_msg = "_yolo_" if use_yolo is True else ""
+    yolo_msg = "_yolo" if use_yolo is True else ""
     new_path = filename_without_extension + yolo_msg + "_" + str(idx) + "." + extension
 
     # To avoid work, if the new file already exists, we can skip the work.
@@ -489,14 +489,14 @@ def crop_image(
         print(f"Skipping the cropping of {new_path=}, because it already exists")
         return new_path
 
+    print(
+        f"Cropping {path=} and {idx=} to form {new_path},"
+        + f"with {x_min=}, {x_max=}, {y_min=}, {y_max=} with {use_yolo=}"
+    )
+
     img = Image.open(path)
     new_img = img.crop((x_min, y_min, x_max, y_max))
     new_img.save(new_path)
-
-    print(
-        f"Cropped {path=} and {idx=} to form {new_path},"
-        + f"with {x_min=}, {x_max=}, {y_min=}, {y_max=}"
-    )
 
     return new_path
 
