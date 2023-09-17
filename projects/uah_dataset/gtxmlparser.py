@@ -412,7 +412,11 @@ def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> flo
     # dividing it by the sum of prediction + ground-truth areas - the
     # interesection area (The intersecton area is sumed twice, so we have to
     # substract it once, to obtain the correct resutl)
-    iou = float(interArea) / float(boxAArea + boxBArea - interArea)
+    union_area = boxAArea + boxBArea - interArea
+    if union_area == 0:
+        iou = 0
+    else:
+        iou = float(interArea) / float(union_area)
 
     return iou
 
