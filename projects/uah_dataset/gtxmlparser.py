@@ -200,26 +200,37 @@ def parse_gt_xml_file_and_maybe_crop(
         cropped_data: list[Tuple[str, list[int]]] = []
 
         if use_yolo:
+            valid_yolo_model_results, valid_iou_results = False, False
+            yolo_results, yolo_iou_results = None, None
             print(f"Cropping {path=} with YOLO")
-            yolo_results = calculate_yolo(path, confidence_threshold=yolo_threshold)
-            yolo_ids_result, yolo_coords = calculate_best_fit_yolo(
-                identities,
-                coords_list,
-                yolo_ids,
-                yolo_results,
-                iou_threshold=iou_threshold,
+            yolo_results, valid_yolo_model_results = calculate_yolo(
+                path, confidence_threshold=yolo_threshold
             )
-            for id_, coords in yolo_ids_result, yolo_coords:
-                new_path = crop_image(
-                    path,
-                    id_,
-                    coords[0],
-                    coords[1],
-                    coords[2],
-                    coords[3],
-                    use_yolo=True,
+            if valid_yolo_model_results:
+                # TODO: Try greedy version of calculate_best_fit_yolo.
+                yolo_iou_results, valid_iou_results = calculate_best_fit_yolo_greedy(
+                    identities,
+                    coords_list,
+                    yolo_ids,
+                    yolo_results,
+                    iou_threshold=iou_threshold,
                 )
-                cropped_data.append((new_path, [id_]))
+            if valid_yolo_model_results and valid_iou_results:
+                assert yolo_iou_results is not None
+
+                for yolo_result in yolo_iou_results:
+                    id_, coords = yolo_result
+                    # The coordinates tuples must be (xmin, xmax, ymin, ymax)
+                    new_path = crop_image(
+                        path,
+                        id_,
+                        coords[0],
+                        coords[1],
+                        coords[2],
+                        coords[3],
+                        use_yolo=True,
+                    )
+                    cropped_data.append((new_path, [id_]))
 
         else:
             print(f"Cropping {path=}")
@@ -354,9 +365,10 @@ def calculate_yolo(
     path: str,
     classes: list[int] = [YOLO_CLASSES_MAP["human"]],
     confidence_threshold: float = YOLO_IOU_THRESHOLD,
-) -> list[tuple[int, int, int, int]]:
+) -> tuple[list[tuple[int, int, int, int]], bool]:
     model = YOLO("yolov8n.pt")  # pretrained YOLOv8n model
 
+    valid_yolo_results = False
     results = model([path], classes=classes, conf=confidence_threshold)
 
     boxes: list[list[int]] = []
@@ -366,7 +378,9 @@ def calculate_yolo(
         # Location of human bounding boxes.
         boxes = result.boxes.xyxy.detach().cpu().numpy().astype(int).tolist()
 
-    print(f"The YOLO bboxes are {boxes=}")
+    print(f"The YOLO boxes for {path=} are {boxes=} in xyxy")
+    if len(boxes) > 0:
+        valid_yolo_results = True
 
     # The coordinates tuples must be  (xmin, xmax, ymin, ymax)
     # The tuples returned by yolo are (xmin, ymin, xmax, ymax)
@@ -379,7 +393,7 @@ def calculate_yolo(
         crop_tuple = (x_min, x_max, y_min, y_max)
         tuple_boxes.append(crop_tuple)
 
-    return tuple_boxes
+    return tuple_boxes, valid_yolo_results
 
 
 def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> float:
@@ -427,8 +441,9 @@ def calculate_best_fit_yolo(
     yolo_ids: list[int],
     yolo_coords_results: list[tuple[int, int, int, int]],
     iou_threshold: float = YOLO_IOU_THRESHOLD,
-) -> list[tuple[int, tuple[int, int, int, int]]]:
+) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool]:
     results: list[tuple[int, tuple[int, int, int, int]]] = []
+    valid_iou_results = False
 
     # TODO: This may not find the best IOU the first time. What do we do with
     # this problem.
@@ -445,7 +460,11 @@ def calculate_best_fit_yolo(
                         + f"skipping {(annotation_id, yolo_coords)=}"
                     )
 
-    return results
+    if len(results) > 0:
+        valid_iou_results = True
+
+    print(f"Calculate best fit yolo {results=}")
+    return results, valid_iou_results
 
 
 def crop_image(
