@@ -112,18 +112,7 @@ class UAHDataset(ImageDataset):
         train_pids = pids_copy[:num_train_pids]
         test_pids = pids_copy[num_train_pids:]
 
-        if self.use_yolo_for_testing:
-            # Parse all the xml again, and in consecuence do the cropping with
-            # YOLO, with the predeterminded train/test PID split.
-            self.pid_dict_before_yolo = pid_dict.copy()
-            _, pid_dict = parse_all_xml(
-                self.dataset_dir,
-                crop_images=self.crop_images,
-                use_yolo=True,
-                yolo_ids=test_pids,
-                yolo_threshold=self.yolo_threshold,
-                iou_threshold=self.yolo_iou_threshold,
-            )
+        
 
         train: list[tuple[str, int, int]] = []
         query: list[tuple[str, int, int]] = []
@@ -139,6 +128,18 @@ class UAHDataset(ImageDataset):
                 image_tuple = (image_path, new_label, camera_train)
                 train.append(image_tuple)
 
+        if self.use_yolo_for_testing:
+            # Parse all the xml again, and in consecuence do the cropping with
+            # YOLO, with the predeterminded train/test PID split.
+            self.pid_dict_before_yolo = pid_dict.copy()
+            _, pid_dict = parse_all_xml(
+                self.dataset_dir,
+                crop_images=self.crop_images,
+                use_yolo=True,
+                yolo_ids=test_pids,
+                yolo_threshold=self.yolo_threshold,
+                iou_threshold=self.yolo_iou_threshold,
+            )
         # for each test ID, randomly choose two images, one for
         # query and the other one for gallery, until we have only zero or one
         # left.
