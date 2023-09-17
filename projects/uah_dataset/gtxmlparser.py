@@ -501,6 +501,91 @@ def crop_image(
     return new_path
 
 
+def calculate_best_fit_yolo_greedy(
+    identities: list[int],
+    xml_coords_list: list[tuple[int, int, int, int]],
+    yolo_ids: list[int],
+    yolo_coords_results: list[tuple[int, int, int, int]],
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
+) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool]:
+    results: list[tuple[int, tuple[int, int, int, int]]] = []
+    valid_iou_results = False
+
+    assert len(identities) == len(xml_coords_list)
+
+    def _sort_best_iou(
+        x: tuple[tuple[int, int], float], y: tuple[tuple[int, int], float]
+    ) -> int:
+        iou_x: float = x[1]
+        iou_y: float = y[1]
+        if iou_x > iou_y:
+            return 1
+        elif iou_x < iou_y:
+            return -1
+        else:
+            return 0
+
+    if len(xml_coords_list) == 1 and len(yolo_coords_results) == 1:
+        print(
+            "We only have one identity, using the normal function to calc the best fit."
+        )
+        return calculate_best_fit_yolo(
+            identities=identities,
+            xml_coords_list=xml_coords_list,
+            yolo_ids=yolo_ids,
+            yolo_coords_results=yolo_coords_results,
+            iou_threshold=iou_threshold,
+        )
+    elif len(xml_coords_list) == 0 or len(yolo_coords_results) == 0:
+        print("In iou calc one of the coordinates list is empty.")
+        dummy_coords = (-1, -1, -1, -1)
+        dummy_id = -1
+        return ([(dummy_id, dummy_coords)], False)
+
+    # Be greedy when we calculate the best fit. Try to match all the
+    # coordinates from the coordinates list with all the yolo coordinates and
+    # select the best fit for each.
+    print(f"Calculate best fit yolo greedy {xml_coords_list=} {yolo_coords_results=}")
+    best_fits: list[tuple[tuple[int, int], float]] = []
+    for i_idx, xml_data in enumerate(zip(identities, xml_coords_list)):
+        annotation_id, coords = xml_data
+        for j_idx, yolo_coords in enumerate(yolo_coords_results):
+            iou_result = iou(coords, yolo_coords)
+            if iou_result >= iou_threshold and annotation_id in yolo_ids:
+                idxs = (i_idx, j_idx)
+                best_fits.append((idxs, iou_result))
+
+    best_fits.sort(key=functools.cmp_to_key(_sort_best_iou))
+
+    print(f" The IOU best fits are {best_fits=}")
+    avalible_xml_idx = [i for i in range(len(xml_coords_list))]
+    avalible_yolo_idx = [i for i in range(len(yolo_coords_results))]
+    while (
+        len(avalible_xml_idx) > 0 and len(avalible_yolo_idx) > 0 and len(best_fits) > 0
+    ):
+        best_result = best_fits[0]
+        idxs = best_result[0]
+        xml_idx = idxs[0]
+        yolo_idx = idxs[1]
+        if xml_idx in avalible_xml_idx and yolo_idx in avalible_yolo_idx:
+            identifier = identities[xml_idx]
+            yolo_best_coords = yolo_coords_results[yolo_idx]
+            results.append((identifier, yolo_best_coords))
+
+            avalible_yolo_idx.remove(yolo_idx)
+            avalible_xml_idx.remove(xml_idx)
+
+        # Remove this inconditionaly, as the result is already appended or not
+        # valid.
+        best_fits.remove(best_result)
+
+    if len(results) > 0:
+        valid_iou_results = True
+
+    print(f"Calculated best fit yolo greedily {results=}")
+    return results, valid_iou_results
+
+
 if __name__ == "__main__":
     folder = os.path.expanduser("~/Documents/gba_dataset")
     generate_frames(folder)
