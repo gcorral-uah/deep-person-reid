@@ -423,18 +423,27 @@ def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> flo
 
 def calculate_best_fit_yolo(
     identities: list[int],
-    coords_list: list[tuple[int, int, int, int]],
+    xml_coords_list: list[tuple[int, int, int, int]],
     yolo_ids: list[int],
-    yolo_results: list[tuple[int, int, int, int]],
+    yolo_coords_results: list[tuple[int, int, int, int]],
     iou_threshold: float = YOLO_IOU_THRESHOLD,
 ) -> list[tuple[int, tuple[int, int, int, int]]]:
     results: list[tuple[int, tuple[int, int, int, int]]] = []
 
-    for annotation_id, coords in zip(identities, coords_list):
-        for yolo_coords in yolo_results:
+    # TODO: This may not find the best IOU the first time. What do we do with
+    # this problem.
+    print(f"Calculate best fit yolo {xml_coords_list=} {yolo_coords_results=}")
+    for annotation_id, coords in zip(identities, xml_coords_list):
+        for yolo_coords in yolo_coords_results:
             iou_result = iou(coords, yolo_coords)
             if iou_result >= iou_threshold and annotation_id in yolo_ids:
-                results.append((annotation_id, yolo_coords))
+                if (annotation_id, yolo_coords) not in results:
+                    results.append((annotation_id, yolo_coords))
+                else:
+                    print(
+                        "We have already identified the object with a good IOU"
+                        + f"skipping {(annotation_id, yolo_coords)=}"
+                    )
 
     return results
 
