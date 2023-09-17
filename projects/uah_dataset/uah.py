@@ -22,7 +22,7 @@ class UAHDataset(ImageDataset):
         self,
         root: str = "",
         crop_images: bool = True,
-        use_yolo_for_testing: bool = False,
+        use_yolo_for_testing: bool = True,
         yolo_threshold: Optional[int] = None,
         iou_threshold: Optional[int] = None,
         training_test_split: float = 0.5,

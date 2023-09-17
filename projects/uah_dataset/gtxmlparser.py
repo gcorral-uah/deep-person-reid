@@ -610,7 +610,7 @@ if __name__ == "__main__":
     generate_frames(folder)
     generate_all_xml_of_dataset(folder)
     if os.path.exists(folder):
-        d, rd = parse_all_xml(folder, crop_images=False)
+        d, rd = parse_all_xml(folder, crop_images=True, use_yolo=True)
         for k, v in d.items():
             print(f"[{k}]= [")
             for item in v:
