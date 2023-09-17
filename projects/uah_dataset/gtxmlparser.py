@@ -574,7 +574,8 @@ def calculate_best_fit_yolo_greedy(
                 idxs = (i_idx, j_idx)
                 best_fits.append((idxs, iou_result))
 
-    best_fits.sort(key=functools.cmp_to_key(_sort_best_iou))
+    # By default sorts from lower to higher and here we want the best scores first
+    best_fits.sort(key=functools.cmp_to_key(_sort_best_iou), reverse=True)
 
     print(f" The IOU best fits are {best_fits=}")
     avalible_xml_idx = [i for i in range(len(xml_coords_list))]
