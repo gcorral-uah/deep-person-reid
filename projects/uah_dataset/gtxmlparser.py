@@ -94,7 +94,7 @@ def parse_gt_xml_file_and_maybe_crop(
     yolo_ids: list[int] = [],
     yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
     iou_threshold: float = YOLO_IOU_THRESHOLD,
-) -> list[Tuple[str, list[int]]]:
+) -> tuple[list[tuple[str, list[int]]], int, int, int]:
     # Expand the ~
     file = os.path.expanduser(file)
     identities: list[int] = []
@@ -308,10 +308,15 @@ def parse_gt_xml_file_and_maybe_crop(
                 )
                 cropped_data.append((new_path, [id_]))
 
-        return cropped_data
+        return (
+            cropped_data,
+            num_identities_in_xml,
+            num_identified_by_yolo,
+            num_correct_identified_by_yolo,
+        )
     else:
         print(f"Parsing an image:{path=}, {identities=}")
-        return [(path, identities)]
+        return [(path, identities)], -1, -1, -1
 
 
 def build_rev_dict_gt_xml(map: Dict[str, list[int]]) -> Dict[int, list[str]]:
@@ -335,12 +340,20 @@ def parse_gt_xml_video(
     yolo_ids: list[int] = [],
     yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
     iou_threshold: float = YOLO_IOU_THRESHOLD,
-) -> Dict[str, list[int]]:
-    dict_file_people: Dict[str, list[int]] = {}
+) -> tuple[dict[str, list[int]], list[int], list[int], list[int]]:
+    dict_file_people: dict[str, list[int]] = {}
+    num_xml_identities_list: list[int] = []
+    num_identified_by_yolo_list: list[int] = []
+    num_correct_identified_by_yolo_list: list[int] = []
 
     for file in files:
         file = os.path.expanduser(file)
-        xml_data_list = parse_gt_xml_file_and_maybe_crop(
+        (
+            xml_data_list,
+            num_xml_identities,
+            num_identified_by_yolo,
+            num_correct_identified_by_yolo,
+        ) = parse_gt_xml_file_and_maybe_crop(
             file,
             use_yolo=use_yolo,
             yolo_ids=yolo_ids,
@@ -348,11 +361,21 @@ def parse_gt_xml_video(
             yolo_threshold=yolo_threshold,
             iou_threshold=iou_threshold,
         )
+
+        num_xml_identities_list.append(num_xml_identities)
+        num_identified_by_yolo_list.append(num_identified_by_yolo)
+        num_correct_identified_by_yolo_list.append(num_correct_identified_by_yolo)
+
         for elem in xml_data_list:
             image_path, people = elem
             dict_file_people[image_path] = people
 
-    return dict_file_people
+    return (
+        dict_file_people,
+        num_xml_identities_list,
+        num_identified_by_yolo_list,
+        num_correct_identified_by_yolo_list,
+    )
 
 
 def parse_gt_xml_dir(
@@ -362,15 +385,24 @@ def parse_gt_xml_dir(
     yolo_ids: list[int] = [],
     yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
     iou_threshold: float = YOLO_IOU_THRESHOLD,
-) -> Dict[str, list[int]]:
+) -> tuple[dict[str, list[int]], list[int], list[int], list[int]]:
     # Expand the ~
     path = os.path.expanduser(path)
+
+    num_xml_identities_list_return: list[int] = []
+    num_identified_by_yolo_list_return: list[int] = []
+    num_correct_identified_by_yolo_list_return: list[int] = []
 
     files = glob.glob("**.xml", root_dir=path)
     p = path + "/" if path[-1] != "/" else path
     files_loc = [p + f for f in files]
 
-    dict_file_people = parse_gt_xml_video(
+    (
+        dict_file_people,
+        num_xml_identities_list,
+        num_identified_by_yolo_list,
+        num_correct_identified_by_yolo_list,
+    ) = parse_gt_xml_video(
         files_loc,
         use_yolo=use_yolo,
         yolo_ids=yolo_ids,
@@ -378,7 +410,19 @@ def parse_gt_xml_dir(
         yolo_threshold=yolo_threshold,
         iou_threshold=iou_threshold,
     )
-    return dict_file_people
+
+    num_xml_identities_list_return.extend(num_xml_identities_list)
+    num_identified_by_yolo_list_return.extend(num_identified_by_yolo_list)
+    num_correct_identified_by_yolo_list_return.extend(
+        num_correct_identified_by_yolo_list
+    )
+
+    return (
+        dict_file_people,
+        num_xml_identities_list_return,
+        num_identified_by_yolo_list_return,
+        num_correct_identified_by_yolo_list_return,
+    )
 
 
 def parse_all_xml(
@@ -394,6 +438,10 @@ def parse_all_xml(
     subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
     dict_files_people_global: Dict[str, list[int]] = {}
 
+    num_xml_identities_list_final: list[int] = []
+    num_identified_by_yolo_list_final: list[int] = []
+    num_correct_identified_by_yolo_list_final: list[int] = []
+
     for dir in subfolders:
         # The other dir contain files that are not video, so ignore it.
         if re.match(".*other.*", dir):
@@ -404,7 +452,12 @@ def parse_all_xml(
         real_dir = dir + "/" if dir[-1] != "/" else dir
         xml_dir = real_dir + "xml"
 
-        dict_people_files_directory = parse_gt_xml_dir(
+        (
+            dict_people_files_directory,
+            num_xml_identities_list,
+            num_identified_by_yolo_list,
+            num_correct_identified_by_yolo_list,
+        ) = parse_gt_xml_dir(
             xml_dir,
             use_yolo=use_yolo,
             yolo_ids=yolo_ids,
@@ -415,6 +468,11 @@ def parse_all_xml(
         # Merge the two dicts.
         dict_files_people_global = (
             dict_files_people_global | dict_people_files_directory
+        )
+        num_xml_identities_list_final.extend(num_xml_identities_list)
+        num_identified_by_yolo_list_final.extend(num_identified_by_yolo_list)
+        num_correct_identified_by_yolo_list_final.extend(
+            num_correct_identified_by_yolo_list
         )
 
     dict_people_files_global = build_rev_dict_gt_xml(dict_files_people_global)
