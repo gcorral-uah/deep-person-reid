@@ -6,8 +6,8 @@ import subprocess
 import os
 import re
 import shutil
-from PIL import Image
 from typing import Optional
+from PIL import Image, ImageDraw
 from ultralytics import YOLO
 import functools
 
@@ -606,6 +606,48 @@ def calculate_best_fit_yolo_greedy(
 
     print(f"Calculated best fit yolo greedily {results=}")
     return results, valid_iou_results
+def draw_region_in_image(
+    path: str,
+    bbox: tuple[int, int, int, int],
+    new_path: Optional[str],
+    show: bool = False,
+):
+    # The coordinates tuples must be (xmin, xmax, ymin, ymax)
+
+    if new_path is None:
+        # This is a hack to separate the absolute path and the extension, but as we
+        # have a user with a dot in it's name, we can't relly in the dot to act as
+        # a separator between the filename and the extension and extract it with
+        # regex. Also the iteration should always be O(c*1), with a very small c.
+        dot_char_idx = -1
+        for char in reversed(path):
+            if char == ".":
+                break
+            dot_char_idx -= 1
+
+        # We use dot_char_idx + 1 to exclude the point of the extension.
+        filename_without_extension, extension = (
+            path[:dot_char_idx],
+            path[dot_char_idx + 1 :],
+        )
+
+        new_path = filename_without_extension + "_with_region_painted" + extension
+
+    orig_img = Image.open(path)
+    img = orig_img.copy()
+
+    x_min = bbox[0]
+    x_max = bbox[1]
+    y_min = bbox[2]
+    y_max = bbox[3]
+
+    rectangle = ImageDraw.Draw(img)
+    rectangle.rectangle((x_min, y_min, x_max, y_max), fill=None, outline="green")
+
+    img.save(new_path)
+    if show:
+        img.show()
+
 
 
 if __name__ == "__main__":
