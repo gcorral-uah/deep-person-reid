@@ -11,8 +11,8 @@ from typing import Optional
 from ultralytics import YOLO
 import functools
 
-YOLO_DETECTON_THRESHOLD: float = 0.8
-YOLO_IOU_THRESHOLD: float = 0.8
+YOLO_DETECTON_THRESHOLD: float = 0.6
+YOLO_IOU_THRESHOLD: float = 0.5
 YOLO_CLASSES_MAP: dict[str, int] = {
     "human": 0,
 }
@@ -364,7 +364,7 @@ def parse_all_xml(
 def calculate_yolo(
     path: str,
     classes: list[int] = [YOLO_CLASSES_MAP["human"]],
-    confidence_threshold: float = YOLO_IOU_THRESHOLD,
+    confidence_threshold: float = YOLO_DETECTON_THRESHOLD,
 ) -> tuple[list[tuple[int, int, int, int]], bool]:
     model = YOLO("yolov8n.pt")  # pretrained YOLOv8n model
 
