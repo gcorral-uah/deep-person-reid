@@ -652,6 +652,54 @@ def calculate_best_fit_yolo_greedy(
 
     print(f"Calculated best fit yolo greedily {results=}")
     return results, valid_iou_results
+
+
+def calculate_coords_in_bounding_box(
+    list_coords: list[tuple[int, int, int, int]], box: tuple[int, int, int, int]
+) -> int:
+    # The coordinates tuples must be (xmin, xmax, ymin, ymax)
+    return_value = 0
+    for coords in list_coords:
+        if check_bbox_intersection_iou(coords, box):
+            return_value += 1
+
+    return return_value
+
+
+def check_bbox_intersection(
+    boxA: tuple[int, int, int, int], boxB: tuple[int, int, int, int]
+) -> bool:
+    x_min_a = boxA[0]
+    x_max_a = boxA[1]
+    y_min_a = boxA[2]
+    y_max_a = boxA[3]
+
+    x_min_b = boxB[0]
+    x_max_b = boxB[1]
+    y_min_b = boxB[2]
+    y_max_b = boxB[3]
+
+    # Code inspired by https://stackoverflow.com/a/55088324
+    # In this rec1 is boxA and rec2 is boxB.
+    # Also x1 == x_min, x2 == xmax, y1 == ymin and y2 == ymax.
+    first_term_x = (x_max_b >= x_min_a) and (x_max_b <= x_max_a)
+    second_term_x = (x_min_b >= x_min_a) and (x_min_b <= x_max_a)
+
+    first_term_y = (y_max_b >= y_min_a) and (y_max_b <= y_max_a)
+    second_term_y = (y_min_b >= y_min_a) and (y_min_b <= y_max_a)
+
+    x_match = first_term_x or second_term_x
+    y_match = first_term_y or second_term_y
+
+    return x_match and y_match
+
+
+def check_bbox_intersection_iou(
+    boxA: tuple[int, int, int, int], boxB: tuple[int, int, int, int]
+) -> bool:
+    return iou(boxA, boxB) > 0.0
+
+
 def draw_region_in_image(
     path: str,
     bbox: tuple[int, int, int, int],
