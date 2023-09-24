@@ -993,10 +993,11 @@ if __name__ == "__main__":
                 print(item)
             print("]")
 
-        print(
-            f"{xml_identities=}, {identified_by_yolo=}, {correct_identified_by_yolo=}"
-        )
-
         len_training_data = 0
         for k, v in rd.items():
             len_training_data += len(v[k])
+
+        print(
+            f"{xml_identities=}, {identified_by_yolo=}, "
+            + f"{correct_identified_by_yolo=}, {len_training_data=}"
+        )
