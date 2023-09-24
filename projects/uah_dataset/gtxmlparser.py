@@ -432,7 +432,13 @@ def parse_all_xml(
     yolo_ids: list[int] = [],
     yolo_threshold: float = YOLO_DETECTON_THRESHOLD,
     iou_threshold: float = YOLO_IOU_THRESHOLD,
-) -> Tuple[Dict[str, list[int]], Dict[int, list[str]]]:
+) -> tuple[
+    dict[str, list[int]],
+    dict[int, list[str]],
+    Optional[int],
+    Optional[int],
+    Optional[int],
+]:
     # Expand the ~
     folder = os.path.expanduser(folder)
     subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
@@ -477,7 +483,22 @@ def parse_all_xml(
 
     dict_people_files_global = build_rev_dict_gt_xml(dict_files_people_global)
 
-    return dict_files_people_global, dict_people_files_global
+    if use_yolo:
+        xml_identities = sum(num_xml_identities_list_final)
+        identified_by_yolo = sum(num_identified_by_yolo_list_final)
+        correct_identified_by_yolo = sum(num_correct_identified_by_yolo_list_final)
+    else:
+        xml_identities = None
+        identified_by_yolo = None
+        correct_identified_by_yolo = None
+
+    return (
+        dict_files_people_global,
+        dict_people_files_global,
+        xml_identities,
+        identified_by_yolo,
+        correct_identified_by_yolo,
+    )
 
 
 def calculate_yolo(
@@ -951,7 +972,15 @@ if __name__ == "__main__":
     generate_frames(folder)
     generate_all_xml_of_dataset(folder)
     if os.path.exists(folder):
-        d, rd = parse_all_xml(folder, crop_images=True, use_yolo=True)
+        (
+            d,
+            rd,
+            xml_identities,
+            identified_by_yolo,
+            correct_identified_by_yolo,
+        ) = parse_all_xml(
+            folder, crop_images=True, use_yolo=True, yolo_ids=[5, 7, 9, 1]
+        )
         for k, v in d.items():
             print(f"[{k}]= [")
             for item in v:
@@ -963,3 +992,11 @@ if __name__ == "__main__":
             for item in v:
                 print(item)
             print("]")
+
+        print(
+            f"{xml_identities=}, {identified_by_yolo=}, {correct_identified_by_yolo=}"
+        )
+
+        len_training_data = 0
+        for k, v in rd.items():
+            len_training_data += len(v[k])

@@ -91,7 +91,7 @@ class UAHDataset(ImageDataset):
         # If we use YOLO we have to do 2 passes of parsing the xml. The first
         # one is to separate in training and test PIDS. If we don't use YOLO
         # this is the only pass neccesary.
-        _, pid_dict = parse_all_xml(
+        _, pid_dict, _, _, _ = parse_all_xml(
             self.dataset_dir, crop_images=self.crop_images, use_yolo=False
         )
         pids = list(pid_dict.keys())
@@ -112,8 +112,6 @@ class UAHDataset(ImageDataset):
         train_pids = pids_copy[:num_train_pids]
         test_pids = pids_copy[num_train_pids:]
 
-        
-
         train: list[tuple[str, int, int]] = []
         query: list[tuple[str, int, int]] = []
         gallery: list[tuple[str, int, int]] = []
@@ -132,7 +130,13 @@ class UAHDataset(ImageDataset):
             # Parse all the xml again, and in consecuence do the cropping with
             # YOLO, with the predeterminded train/test PID split.
             self.pid_dict_before_yolo = pid_dict.copy()
-            _, pid_dict = parse_all_xml(
+            (
+                _,
+                pid_dict,
+                num_xml_ids,
+                num_yolo_ids,
+                num_correct_yolo_ids,
+            ) = parse_all_xml(
                 self.dataset_dir,
                 crop_images=self.crop_images,
                 use_yolo=True,
@@ -140,10 +144,15 @@ class UAHDataset(ImageDataset):
                 yolo_threshold=self.yolo_threshold,
                 iou_threshold=self.yolo_iou_threshold,
             )
-        # for each test ID, randomly choose two images, one for
-        # query and the other one for gallery, until we have only zero or one
-        # left.
 
+            print(
+                "IMPORTANT"
+                + f"The stats for YOLO are xml_identified: {num_xml_ids=}, "
+                + f"yolo_identified: {num_yolo_ids=}, "
+                + f"correct_yolo_identified: {num_correct_yolo_ids=}"
+            )
+        # for each test ID, randomly choose two images, one for query and the
+        # other one for gallery, until we have only zero or one left.
         for pid in test_pids:
             img_names = set(copy.deepcopy(pid_dict[pid]))
             while (len(img_names)) >= 2:
@@ -157,7 +166,6 @@ class UAHDataset(ImageDataset):
                 image_gallery_tuple = (gallery_img, new_label, camera_gallery)
                 gallery.append(image_gallery_tuple)
 
-        # TODO: Maybe we want to shuffle them?
         return train, query, gallery
 
     def prepare_dataset(self, path: str):
