@@ -397,30 +397,33 @@ def calculate_yolo(
 
 
 def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> float:
+def iou(boxA: tuple[int, int, int, int], boxB: tuple[int, int, int, int]) -> float:
     # The coordinates tuples must be (xmin, xmax, ymin, ymax)
-    x_min_a = objA[0]
-    x_max_a = objA[1]
-    y_min_a = objA[2]
-    y_max_a = objA[3]
+    x_min_a = boxA[0]
+    x_max_a = boxA[1]
+    y_min_a = boxA[2]
+    y_max_a = boxA[3]
 
-    x_min_b = objB[0]
-    x_max_b = objB[1]
-    y_min_b = objB[2]
-    y_max_b = objB[3]
+    x_min_b = boxB[0]
+    x_max_b = boxB[1]
+    y_min_b = boxB[2]
+    y_max_b = boxB[3]
 
     # determine the (x, y)-coordinates of the intersection rectangle
-    xmax = max(x_max_a, x_max_b)
-    ymax = max(y_max_a, y_max_b)
-    xmin = min(x_min_a, x_min_b)
-    ymin = min(y_min_a, y_min_b)
+    xmax = min(x_max_a, x_max_b)
+    ymax = min(y_max_a, y_max_b)
+    xmin = max(x_min_a, x_min_b)
+    ymin = max(y_min_a, y_min_b)
 
     # compute the area of intersection rectangle
     interArea = max(0, xmax - xmin + 1) * max(0, ymax - ymin + 1)
+    if interArea == 0:
+        return 0
 
     # compute the area of both the prediction and ground-truth
     # rectangles
-    boxAArea = (x_max_a - x_min_a + 1) * (y_max_a - y_min_a + 1)
-    boxBArea = (x_max_b - x_min_b + 1) * (y_max_b - y_min_b + 1)
+    boxAArea = abs((x_max_a - x_min_a + 1) * (y_max_a - y_min_a + 1))
+    boxBArea = abs((x_max_b - x_min_b + 1) * (y_max_b - y_min_b + 1))
 
     # compute the intersection over union by taking the intersection area and
     # dividing it by the sum of prediction + ground-truth areas - the
@@ -428,10 +431,9 @@ def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> flo
     # substract it once, to obtain the correct resutl)
     union_area = boxAArea + boxBArea - interArea
     if union_area == 0:
-        iou = 0
-    else:
-        iou = float(interArea) / float(union_area)
+        return 0
 
+    iou = float(interArea) / float(union_area)
     return iou
 
 
