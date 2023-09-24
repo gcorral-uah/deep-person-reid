@@ -6,8 +6,8 @@ import subprocess
 import os
 import re
 import shutil
-from typing import Optional
 from PIL import Image, ImageDraw
+from typing import Optional, Literal
 from ultralytics import YOLO
 import functools
 
@@ -365,8 +365,19 @@ def calculate_yolo(
     path: str,
     classes: list[int] = [YOLO_CLASSES_MAP["human"]],
     confidence_threshold: float = YOLO_DETECTON_THRESHOLD,
+    yolo_level: Literal["small", "large"] = "large",
 ) -> tuple[list[tuple[int, int, int, int]], bool]:
-    model = YOLO("yolov8n.pt")  # pretrained YOLOv8n model
+    if yolo_level == "small":
+        model = YOLO("yolov8n.pt")  # pretrained YOLOv8n model (small and fast)
+        print("Using small YOLO model")
+    elif yolo_level == "large":
+        model = YOLO("yolov8x.pt")  # pretrained YOLOv8x model (big and slow)
+        print("Using big YOLO model")
+    else:
+        model = None
+        assert (
+            model is not None
+        ), f"yolo_level, can only be 'small' or 'large', you have {yolo_level=}"
 
     valid_yolo_results = False
     results = model([path], classes=classes, conf=confidence_threshold)
