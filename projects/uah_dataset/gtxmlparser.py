@@ -105,6 +105,8 @@ def parse_gt_xml_file_and_maybe_crop(
     coords_list: list[tuple[int, int, int, int]] = []
     size_list: list[tuple[int, int]] = []
 
+    anon_coords_list: list[tuple[int, int, int, int]] = []
+
     xml_doc = xml.dom.minidom.parse(file)
     # There is only one annotation on every document.
     annotation = xml_doc.getElementsByTagName("annotation")[0]
@@ -125,6 +127,29 @@ def parse_gt_xml_file_and_maybe_crop(
         # If the number is greater than 100 there are anonymous, so we don't
         # want them.
         if number_id >= 100:
+            bb_wrapper = obj.getElementsByTagName("bndbox")
+            for bb_box in bb_wrapper:
+                xmin_tag = bb_box.getElementsByTagName("xmin")
+                xmin = xmin_tag[0].childNodes[0].data
+                xmax_tag = bb_box.getElementsByTagName("xmax")
+                xmax = xmax_tag[0].childNodes[0].data
+                ymin_tag = bb_box.getElementsByTagName("ymin")
+                ymin = ymin_tag[0].childNodes[0].data
+                ymax_tag = bb_box.getElementsByTagName("ymax")
+                ymax = ymax_tag[0].childNodes[0].data
+                try:
+                    xmin_parsed = int(xmin)
+                    xmax_parsed = int(xmax)
+                    ymin_parsed = int(ymin)
+                    ymax_parsed = int(ymax)
+                    # The coordinates tuples must be (xmin, xmax, ymin, ymax)
+                    anon_coords_list.append(
+                        (xmin_parsed, xmax_parsed, ymin_parsed, ymax_parsed)
+                    )
+                except (ValueError, AssertionError):
+                    # Ignore the error, this is only for reporting stats for yolo
+                    pass
+
             continue
 
         identities.append(number_id)
@@ -228,6 +253,30 @@ def parse_gt_xml_file_and_maybe_crop(
                     yolo_results,
                     iou_threshold=iou_threshold,
                 )
+
+                # If we have any of the ignored results (id > 100) we need to
+                # add to the correct identified by YOLO count if any of the
+                # additional bboxes by YOLO is one the ignored ids.
+                # In the case of the xml identities it's already calculated,
+                # so we don't touch it here
+                if len(anon_coords_list) > 0 and use_yolo:
+                    # yolo_iou_results is list of (_id, coordinates) and we
+                    # only want the coordinates
+                    yolo_taken_results: list[tuple[int, int, int, int]] = []
+                    for _, yolo_taken_res in yolo_iou_results:
+                        yolo_taken_results.append(yolo_taken_res)
+
+                    additional_correct_identified_by_yolo = (
+                        calculate_extra_anon_id_yolo(
+                            anon_coords_list, yolo_taken_results, yolo_results
+                        )
+                    )
+
+                    num_correct_identified_by_yolo = (
+                        num_correct_identified_by_yolo
+                        + additional_correct_identified_by_yolo
+                    )
+
             if valid_yolo_model_results and valid_iou_results:
                 assert yolo_iou_results is not None
                 for yolo_result in yolo_iou_results:
@@ -710,6 +759,36 @@ def calculate_best_fit_yolo_greedy(
         valid_iou_results,
         num_correct_identified_by_yolo,
     )
+
+
+def calculate_extra_anon_id_yolo(
+    anon_coords: list[tuple[int, int, int, int]],
+    taken_yolo_coordinates: list[tuple[int, int, int, int]],
+    yolo_coords: list[tuple[int, int, int, int]],
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
+) -> int:
+    # HACK: This is a naive version of the coordinate matching, because it's
+    # only for statistics, and it should have the mayority of people already
+    # identified.
+
+    # Don't modify an array we are operating in.
+    remaining_yolo_coordinates = yolo_coords.copy()
+    for y_coords in yolo_coords:
+        for taken_y_coords in taken_yolo_coordinates:
+            if taken_y_coords in remaining_yolo_coordinates:
+                remaining_yolo_coordinates.remove(y_coords)
+
+    num_matched_coords = 0
+    anon_matched_coords: list[tuple[int, int, int, int]] = []
+
+    for a_coords in anon_coords:
+        for rem_yolo_coords in remaining_yolo_coordinates:
+            calculated_iou = iou(a_coords, rem_yolo_coords)
+            if calculated_iou > iou_threshold and a_coords not in anon_matched_coords:
+                num_matched_coords = num_matched_coords + 1
+                anon_matched_coords.append(a_coords)
+
+    return num_matched_coords
 
 
 def calculate_coords_in_bounding_box(
