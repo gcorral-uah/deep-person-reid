@@ -202,6 +202,11 @@ def parse_gt_xml_file_and_maybe_crop(
     if crop_images:
         cropped_data: list[Tuple[str, list[int]]] = []
 
+        num_identities_in_xml = 0
+        num_identified_by_yolo = 0
+        num_correct_identified_by_yolo = 0
+        num_identities_in_xml = len(coords_list) + len(anon_coords_list)
+
         if use_yolo:
             valid_yolo_model_results, valid_iou_results = False, False
             yolo_results, yolo_iou_results = None, None
@@ -209,9 +214,14 @@ def parse_gt_xml_file_and_maybe_crop(
             yolo_results, valid_yolo_model_results = calculate_yolo(
                 path, confidence_threshold=yolo_threshold
             )
+            num_identified_by_yolo = len(yolo_results)
+
             if valid_yolo_model_results:
-                # TODO: Try greedy version of calculate_best_fit_yolo.
-                yolo_iou_results, valid_iou_results = calculate_best_fit_yolo_greedy(
+                (
+                    yolo_iou_results,
+                    valid_iou_results,
+                    num_correct_identified_by_yolo,
+                ) = calculate_best_fit_yolo_greedy(
                     identities,
                     coords_list,
                     yolo_ids,
@@ -220,7 +230,6 @@ def parse_gt_xml_file_and_maybe_crop(
                 )
             if valid_yolo_model_results and valid_iou_results:
                 assert yolo_iou_results is not None
-
                 for yolo_result in yolo_iou_results:
                     id_, coords = yolo_result
                     # The coordinates tuples must be (xmin, xmax, ymin, ymax)
@@ -489,30 +498,47 @@ def calculate_best_fit_yolo(
     yolo_ids: list[int],
     yolo_coords_results: list[tuple[int, int, int, int]],
     iou_threshold: float = YOLO_IOU_THRESHOLD,
-) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool]:
+) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool, int]:
     results: list[tuple[int, tuple[int, int, int, int]]] = []
     valid_iou_results = False
 
-    # TODO: This may not find the best IOU the first time. What do we do with
-    # this problem.
+    num_correct_identified_by_yolo = 0
+
+    # This may not find the best IOU the first time.
+    # If you have more than one result use the greedy version.
     print(f"Calculate best fit yolo {xml_coords_list=} {yolo_coords_results=}")
+    annotations_seen_by_yolo_list: list[int] = []
+    yolo_coordinates_matched: list[tuple[int, int, int, int]] = []
     for annotation_id, coords in zip(identities, xml_coords_list):
         for yolo_coords in yolo_coords_results:
             iou_result = iou(coords, yolo_coords)
-            if iou_result >= iou_threshold and annotation_id in yolo_ids:
-                if (annotation_id, yolo_coords) not in results:
+            if iou_result >= iou_threshold:
+                if annotation_id not in annotations_seen_by_yolo_list:
+                    num_correct_identified_by_yolo = num_correct_identified_by_yolo + 1
+                    annotations_seen_by_yolo_list.append(annotation_id)
+
+                # The problem may be that there are two coordinates items with
+                # the same annotation_id value. The break takes into account
+                # the unique matching of coords with all the yolo_coords, but
+                # another set of coords may match an already taken yolo_coords,
+                # so use `yolo_coordinates_matched` to avoid it.
+                if (
+                    annotation_id in yolo_ids
+                    and yolo_coords not in yolo_coordinates_matched
+                ):
                     results.append((annotation_id, yolo_coords))
-                else:
-                    print(
-                        "We have already identified the object with a good IOU"
-                        + f"skipping {(annotation_id, yolo_coords)=}"
-                    )
+                    yolo_coordinates_matched.append(yolo_coords)
+                    break
 
     if len(results) > 0:
         valid_iou_results = True
 
     print(f"Calculate best fit yolo {results=}")
-    return results, valid_iou_results
+    return (
+        results,
+        valid_iou_results,
+        num_correct_identified_by_yolo,
+    )
 
 
 def crop_image(
@@ -574,7 +600,7 @@ def calculate_best_fit_yolo_greedy(
     yolo_ids: list[int],
     yolo_coords_results: list[tuple[int, int, int, int]],
     iou_threshold: float = YOLO_IOU_THRESHOLD,
-) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool]:
+) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool, int]:
     results: list[tuple[int, tuple[int, int, int, int]]] = []
     valid_iou_results = False
 
@@ -607,20 +633,36 @@ def calculate_best_fit_yolo_greedy(
         print("In iou calc one of the coordinates list is empty.")
         dummy_coords = (-1, -1, -1, -1)
         dummy_id = -1
-        return ([(dummy_id, dummy_coords)], False)
+        num_correct_identified_by_yolo_error_case = 0
+        return (
+            [(dummy_id, dummy_coords)],
+            False,
+            num_correct_identified_by_yolo_error_case,
+        )
+
+    num_xml_identities = len(xml_coords_list)
+    num_identified_by_yolo = len(yolo_coords_results)
+    num_correct_identified_by_yolo = 0
 
     # Be greedy when we calculate the best fit. Try to match all the
     # coordinates from the coordinates list with all the yolo coordinates and
     # select the best fit for each.
     print(f"Calculate best fit yolo greedy {xml_coords_list=} {yolo_coords_results=}")
+    possible_num_correct_identified_by_yolo = 0
     best_fits: list[tuple[tuple[int, int], float]] = []
     for i_idx, xml_data in enumerate(zip(identities, xml_coords_list)):
         annotation_id, coords = xml_data
         for j_idx, yolo_coords in enumerate(yolo_coords_results):
             iou_result = iou(coords, yolo_coords)
-            if iou_result >= iou_threshold and annotation_id in yolo_ids:
-                idxs = (i_idx, j_idx)
-                best_fits.append((idxs, iou_result))
+            if iou_result >= iou_threshold:
+                # First check for correct detections by YOLO, and after that
+                # check if it's an interesting one.
+                possible_num_correct_identified_by_yolo = (
+                    possible_num_correct_identified_by_yolo + 1
+                )
+                if annotation_id in yolo_ids:
+                    idxs = (i_idx, j_idx)
+                    best_fits.append((idxs, iou_result))
 
     # By default sorts from lower to higher and here we want the best scores first
     best_fits.sort(key=functools.cmp_to_key(_sort_best_iou), reverse=True)
@@ -650,8 +692,24 @@ def calculate_best_fit_yolo_greedy(
     if len(results) > 0:
         valid_iou_results = True
 
+    # HACK: For now this seems good enough
+    max_possible_num_correct_identified_by_yolo = min(
+        num_identified_by_yolo, num_xml_identities
+    )
+    if (
+        possible_num_correct_identified_by_yolo
+        > max_possible_num_correct_identified_by_yolo
+    ):
+        num_correct_identified_by_yolo = max_possible_num_correct_identified_by_yolo
+    else:
+        num_correct_identified_by_yolo = possible_num_correct_identified_by_yolo
+
     print(f"Calculated best fit yolo greedily {results=}")
-    return results, valid_iou_results
+    return (
+        results,
+        valid_iou_results,
+        num_correct_identified_by_yolo,
+    )
 
 
 def calculate_coords_in_bounding_box(
