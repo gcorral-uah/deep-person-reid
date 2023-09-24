@@ -10,6 +10,9 @@ from PIL import Image, ImageDraw
 from typing import Optional, Literal
 from ultralytics import YOLO
 import functools
+import torchvision
+import torch
+import math
 
 YOLO_DETECTON_THRESHOLD: float = 0.6
 YOLO_IOU_THRESHOLD: float = 0.5
@@ -407,7 +410,39 @@ def calculate_yolo(
     return tuple_boxes, valid_yolo_results
 
 
-def iou(objA: tuple[int, int, int, int], objB: tuple[int, int, int, int]) -> float:
+def iou_pytorch(
+    boxA: tuple[int, int, int, int], boxB: tuple[int, int, int, int]
+) -> float:
+    # Solution from https://stackoverflow.com/a/65988061
+
+    # The coordinates tuples are (xmin, xmax, ymin, ymax)
+    x_min_a = float(boxA[0])
+    x_max_a = float(boxA[1])
+    y_min_a = float(boxA[2])
+    y_max_a = float(boxA[3])
+
+    x_min_b = float(boxB[0])
+    x_max_b = float(boxB[1])
+    y_min_b = float(boxB[2])
+    y_max_b = float(boxB[3])
+
+    # In torch the boxes are (x1, y1, x2, y2) with 0 <= x1 < x2 and 0 <= y1 < y2.
+    tensorA = torch.tensor([[x_min_a, y_min_a, x_max_a, y_max_a]], dtype=torch.float)
+    tensorB = torch.tensor([[x_min_b, y_min_b, x_max_b, y_max_b]], dtype=torch.float)
+    tensorResult = torchvision.ops.box_iou(tensorA, tensorB)
+    resList = tensorResult.tolist()
+    assert len(resList) == 1 and len(resList[0]) == 1
+    res = resList[0][0]
+
+    # If the condition are not matched the function returns NaN. If that is the case
+    # the boxes don't overlap, so return 0. It can also return -0.0f that is
+    # equivalent to 0.0f, so we don't need to handle the case.
+    if math.isnan(res):
+        return 0
+    else:
+        return res
+
+
 def iou(boxA: tuple[int, int, int, int], boxB: tuple[int, int, int, int]) -> float:
     # The coordinates tuples must be (xmin, xmax, ymin, ymax)
     x_min_a = boxA[0]
