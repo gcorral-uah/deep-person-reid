@@ -695,6 +695,13 @@ def draw_region_in_image(
         img.show()
 
 
+def xxyy_to_xyxy(coords: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    return (coords[0], coords[2], coords[1], coords[3])
+
+
+def xyxy_to_xxyy(coords: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    return (coords[0], coords[2], coords[1], coords[3])
+
 
 if __name__ == "__main__":
     folder = os.path.expanduser("~/Documents/gba_dataset")
