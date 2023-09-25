@@ -139,6 +139,11 @@ def visualize_ranked_results(
                         sys.stderr.write(
                             f"Failed when comparing image in gallery {gimg_path=} with query {qimg_path=} with rank {rank_idx=}\n"
                         )
+                    if matched and rank_idx == 1:
+                        sys.stderr.write(
+                            f"Success (rank1) when comparing image in gallery {gimg_path=} with query {qimg_path=}\n"
+                        )
+
                 else:
                     _cp_img_to(
                         gimg_path,
