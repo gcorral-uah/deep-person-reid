@@ -1,15 +1,15 @@
+from torchreid.data import ImageDataset
+
 import copy
+import random
 import os.path as osp
 from typing import Optional
-import random
-
-from torchreid.data import ImageDataset
 from gtxmlparser import (
+    YOLO_IOU_THRESHOLD,
+    YOLO_DETECTON_THRESHOLD,
     parse_all_xml,
     generate_frames,
     generate_all_xml_of_dataset,
-    YOLO_IOU_THRESHOLD,
-    YOLO_DETECTON_THRESHOLD,
 )
 
 
@@ -146,7 +146,7 @@ class UAHDataset(ImageDataset):
             )
 
             print(
-                "IMPORTANT"
+                "IMPORTANT: "
                 + f"The stats for YOLO are xml_identified: {num_xml_ids=}, "
                 + f"yolo_identified: {num_yolo_ids=}, "
                 + f"correct_yolo_identified: {num_correct_yolo_ids=}"
@@ -165,6 +165,13 @@ class UAHDataset(ImageDataset):
                 gallery_img = img_names.pop()
                 image_gallery_tuple = (gallery_img, new_label, camera_gallery)
                 gallery.append(image_gallery_tuple)
+
+            print(
+                "IMPORTANT: "
+                + f"The training data len is: {len(train)=}, "
+                + f"the testing query len is : {len(query)=}, "
+                + f"and the len of the testing gallery is: {len(gallery)=}"
+            )
 
         return train, query, gallery
 
