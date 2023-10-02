@@ -241,6 +241,17 @@ def parse_gt_xml_file_and_maybe_crop(
             )
             num_identified_by_yolo = len(yolo_results)
 
+            if not valid_yolo_model_results:
+                detect_yolo_errors(
+                    identities=identities,
+                    xml_coords_list=coords_list,
+                    yolo_ids=yolo_ids,
+                    yolo_coords_results=yolo_results,
+                    anon_coords_list=anon_coords_list,
+                    path=file,
+                    iou_threshold=iou_threshold,
+                )
+
             if valid_yolo_model_results:
                 (
                     yolo_iou_results,
@@ -251,6 +262,8 @@ def parse_gt_xml_file_and_maybe_crop(
                     coords_list,
                     yolo_ids,
                     yolo_results,
+                    anon_coords_list=anon_coords_list,
+                    path=file,
                     iou_threshold=iou_threshold,
                 )
 
@@ -625,6 +638,8 @@ def calculate_best_fit_yolo(
     xml_coords_list: list[tuple[int, int, int, int]],
     yolo_ids: list[int],
     yolo_coords_results: list[tuple[int, int, int, int]],
+    anon_coords_list: list[tuple[int, int, int, int]],
+    path: str,
     iou_threshold: float = YOLO_IOU_THRESHOLD,
 ) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool, int]:
     results: list[tuple[int, tuple[int, int, int, int]]] = []
@@ -660,6 +675,16 @@ def calculate_best_fit_yolo(
 
     if len(results) > 0:
         valid_iou_results = True
+
+    detect_yolo_errors(
+        identities=identities,
+        xml_coords_list=xml_coords_list,
+        yolo_ids=yolo_ids,
+        yolo_coords_results=yolo_coords_results,
+        anon_coords_list=anon_coords_list,
+        path=path,
+        iou_threshold=iou_threshold,
+    )
 
     print(f"Calculate best fit yolo {results=}")
     return (
@@ -727,6 +752,8 @@ def calculate_best_fit_yolo_greedy(
     xml_coords_list: list[tuple[int, int, int, int]],
     yolo_ids: list[int],
     yolo_coords_results: list[tuple[int, int, int, int]],
+    anon_coords_list: list[tuple[int, int, int, int]],
+    path: str,
     iou_threshold: float = YOLO_IOU_THRESHOLD,
 ) -> tuple[list[tuple[int, tuple[int, int, int, int]]], bool, int]:
     results: list[tuple[int, tuple[int, int, int, int]]] = []
@@ -755,6 +782,8 @@ def calculate_best_fit_yolo_greedy(
             xml_coords_list=xml_coords_list,
             yolo_ids=yolo_ids,
             yolo_coords_results=yolo_coords_results,
+            anon_coords_list=anon_coords_list,
+            path=path,
             iou_threshold=iou_threshold,
         )
     elif len(xml_coords_list) == 0 or len(yolo_coords_results) == 0:
@@ -831,6 +860,16 @@ def calculate_best_fit_yolo_greedy(
         num_correct_identified_by_yolo = max_possible_num_correct_identified_by_yolo
     else:
         num_correct_identified_by_yolo = possible_num_correct_identified_by_yolo
+
+    detect_yolo_errors(
+        identities=identities,
+        xml_coords_list=xml_coords_list,
+        yolo_ids=yolo_ids,
+        yolo_coords_results=yolo_coords_results,
+        anon_coords_list=anon_coords_list,
+        path=path,
+        iou_threshold=iou_threshold,
+    )
 
     print(f"Calculated best fit yolo greedily {results=}")
     return (
@@ -959,12 +998,62 @@ def draw_region_in_image(
         img.show()
 
 
+def detect_yolo_errors(
+    identities: list[int],
+    xml_coords_list: list[tuple[int, int, int, int]],
+    yolo_ids: list[int],
+    yolo_coords_results: list[tuple[int, int, int, int]],
+    anon_coords_list: list[tuple[int, int, int, int]],
+    path: str,
+    iou_threshold: float = YOLO_IOU_THRESHOLD,
+) -> None:
+    possible_coordinates_list: list[tuple[int, int, int, int]] = []
+    possible_coordinates_list.extend(xml_coords_list)
+    possible_coordinates_list.extend(anon_coords_list)
+
+    # Note: This is the third time we have this code. We may want to consider
+    # doing a refactor and sharing code between the different functions
+
+    coords_matched_correct_yolo_list: list[tuple[int, int, int, int]] = []
+    xml_matched_by_yolo_list: list[tuple[int, int, int, int]] = []
+
+    for annotation_id, xcoords in zip(identities, possible_coordinates_list):
+        for yolo_coords in yolo_coords_results:
+            iou_result = iou(xcoords, yolo_coords)
+            if iou_result >= iou_threshold:
+                if yolo_coords not in coords_matched_correct_yolo_list:
+                    coords_matched_correct_yolo_list.append(yolo_coords)
+                    xml_matched_by_yolo_list.append(xcoords)
+                    break
+
+    not_seen_by_yolo_list: list[tuple[int, int, int, int]] = []
+    extra_seen_by_yolo_list: list[tuple[int, int, int, int]] = []
+
+    for xc in xml_coords_list:
+        if xc not in xml_matched_by_yolo_list:
+            not_seen_by_yolo_list.append(xc)
+
+    for yc in yolo_coords_results:
+        if yc not in coords_matched_correct_yolo_list:
+            extra_seen_by_yolo_list.append(yc)
+
+    eprint(
+        f"In image {path=}\n"
+        + f"not seen by yolo: {not_seen_by_yolo_list=} and "
+        + f"extra seen by yolo: {extra_seen_by_yolo_list=}"
+    )
+
+
 def xxyy_to_xyxy(coords: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
     return (coords[0], coords[2], coords[1], coords[3])
 
 
 def xyxy_to_xxyy(coords: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
     return (coords[0], coords[2], coords[1], coords[3])
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 if __name__ == "__main__":
