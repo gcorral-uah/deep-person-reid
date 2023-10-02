@@ -1,20 +1,21 @@
-from collections import defaultdict
-from typing import Dict, Tuple
-import xml.dom.minidom
-import glob
-import subprocess
+import torch
+import torchvision
+from PIL import Image, ImageDraw
+
 import os
 import re
-import shutil
-from PIL import Image, ImageDraw
-from typing import Optional, Literal
-from ultralytics import YOLO
-import functools
-import torchvision
-import torch
+import sys
+import glob
 import math
+import shutil
+import functools
+import subprocess
+import xml.dom.minidom
+from typing import Dict, Tuple, Literal, Optional
+from collections import defaultdict
+from ultralytics import YOLO
 
-YOLO_DETECTON_THRESHOLD: float = 0.6
+YOLO_DETECTON_THRESHOLD: float = 0.7
 YOLO_IOU_THRESHOLD: float = 0.5
 YOLO_CLASSES_MAP: dict[str, int] = {
     "human": 0,
